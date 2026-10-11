@@ -59,7 +59,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 | [US-002](#us-002--composición-local-con-docker-compose) | Composición local con Docker Compose | S1 | Alta | US-001 | 5 | Hecho |
 | [US-003](#us-003--esquema-inicial-y-flyway) | Esquema inicial y Flyway | S1 | Crítica | US-001, US-002 | 5 | Hecho |
 | [US-004](#us-004--estrategia-global-de-errores-y-validación) | Estrategia global de errores y validación | S1 | Alta | US-001 | 3 | Hecho |
-| [US-005](#us-005--documentación-openapi) | Documentación OpenAPI | S1 | Media | US-004 | 3 | Pendiente |
+| [US-005](#us-005--documentación-openapi) | Documentación OpenAPI | S1 | Media | US-004 | 3 | Hecho |
 | [US-006](#us-006--pipeline-base-en-github-actions) | Pipeline base en GitHub Actions | S1 | Alta | US-001, US-003 | 5 | Pendiente |
 
 #### US-001 — Esqueleto del proyecto y verificación del stack
@@ -180,6 +180,18 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   2. Autenticación por `bearer` documentada.
   3. `api-contract.md` alineado con la definición.
 - **Riesgos:** ver US-001 (plan B).
+- **Estado:** **Hecho** el 2026-10-11. El riesgo de US-001 queda cerrado: springdoc 3.1.1 compila sobre Spring Boot 4.1.1 y sirve el contrato.
+- **Verificación con salida real**
+  1. ✅ `OpenApiDeshabilitadoIT` — **sin** perfil activo (el que se parece a producción): `/v3/api-docs` → **404**, `/swagger-ui/index.html` → **404** y sin HTML. `/actuator/health` → **200**, para que un 404 en la doc no pueda deberse a que la app no arrancó. Peticiones HTTP reales sobre un puerto real, no MockMvc.
+  2. ✅ `OpenApiHabilitadoIT` — con perfil `local`: `/v3/api-docs` → **200** con OpenAPI 3.1 y Swagger UI → **200**. El esquema `bearerAuth` se verifica **leyendo el JSON generado**: `type: http`, `scheme: bearer`, `bearerFormat: JWT`.
+  3. ✅ `docs/architecture/api-contract.md` creado, con convenciones, autenticación, el catálogo completo de 14 códigos y la tabla de endpoints marcados como pendientes.
+- **Decisiones tomadas aquí**
+  - **Se apaga en `application.yml`, no en un perfil `prod`.** Springdoc se activa en cuanto entra en el classpath: un `application-prod.yml` que se olvidara no evitaría nada. Se documenta por qué en `spring-conventions.md` §5.5.
+  - **El esquema `bearer` se declara pero NO se aplica globalmente.** Hay endpoints públicos (`GET /api/v1/pizzas`) y protegidos. Un requisito global marcaría como privados los públicos. Hay un test que lo comprueba.
+  - **Los tests usan el `HttpClient` del JDK**, no `TestRestTemplate`: en Spring Boot 4 latter pasó a `org.springframework.boot.resttestclient` y **no hay starter**, sólo el módulo suelto. Comprobar un 404 real por HTTP no merece una dependencia nueva.
+- **Trabajo pendiente que esta historia deja**
+  - `docs/architecture/openapi.json` versionado y test de contraste contra el OpenAPI generado → **US-045**.
+  - El `paths` del contrato sigue vacío porque aún no hay endpoints. Es lo esperado; el primero llega con US-010.
 
 #### US-006 — Pipeline base en GitHub Actions
 
@@ -533,6 +545,7 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-11 | US-005 → **Hecho**. OpenAPI publicado sólo en `local` y verificado con peticiones HTTP reales: 404 sin perfil, 200 con `local`, y el esquema `bearerAuth` leído del JSON generado. `api-contract.md` creado con el catálogo de 14 códigos de error. |
 | 2026-10-11 | US-004 → **Hecho**. Errores en `problem+json` con `code` estable, `timestamp` y `traceId`, y 9 escenarios de prueba. El estado HTTP lo decide una tabla, no la excepción. `@WebMvcTest` y `ObjectMapper` han cambiado de paquete en Spring Boot 4. |
 | 2026-10-11 | US-003 → **Hecho**. Las 8 tablas migradas por Flyway y 14 pruebas de integración sobre PostgreSQL real. Tres hallazgos: `spring-boot-flyway` es obligatorio en Boot 4 (sin él ninguna migración se ejecuta, en silencio); PostgreSQL rechaza expresiones en `UNIQUE` de tabla; y RN-IM-06 no lo puede cumplir la base, porque `NUMERIC(12,0)` redondea en silencio. Registrada la ambigüedad **D15** sobre dónde vive el estado del pago. |
 | 2026-10-11 | US-002 → **Hecho**. `docker compose up --build` deja ambos servicios `healthy` en 60,8 s (frío) y 50,4 s (caliente). PostgreSQL sin puerto publicado en el host. `.env` generado desde `.env.example` y protegido por `.gitignore`. Scripts `dev-up.ps1` y `dev-down.ps1`. |

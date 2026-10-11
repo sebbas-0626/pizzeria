@@ -255,6 +255,34 @@ sólo lo que parses como UUID.
 | `@PreAuthorize` | Sólo para reglas de método que no se puedan expresar por ruta. Un solo criterio, documentado |
 | Método | `authorizeHttpRequests` con `requestMatchers`, en orden explícito. Las reglas no implícitas |
 | CORS | Sin configurar en el MVP |
+
+### 5.5 Documentación de la API (OpenAPI / Swagger)
+
+| Aspecto | Configuración |
+|---|---|
+| Librería | `springdoc-openapi-starter-webmvc-ui` **3.1.1** |
+| Dónde se configura lo que no se deduce del código | [`OpenApiConfig`](../../backend/src/main/java/com/pizzeria/common/config/OpenApiConfig.java) |
+| Endpoints | `/v3/api-docs`, `/v3/api-docs.yaml`, `/swagger-ui/index.html` |
+| **Dónde está activo** | **Sólo en el perfil `local`** |
+| **Dónde NO está activo** | En cualquier otro perfil, incluido el de producción |
+| Cómo se apaga | `springdoc.api-docs.enabled: false` y `springdoc.swagger-ui.enabled: false` en `application.yml`; se encienden sólo en `application-local.yml` |
+| Verificación | `OpenApiDeshabilitadoIT` (sin perfil → 404) y `OpenApiHabilitadoIT` (con `local` → 200) |
+
+**Por qué se apaga por defecto y no en un perfil `prod`.** Springdoc se activa **en cuanto entra en el
+classpath**. Un `application-prod.yml` que se olvidara no evitaría nada: el perfil por defecto ya lo
+publicaría. Apagarlo en la base y encenderlo donde hace falta hace que el error sea el de producción y
+no el de desarrollo.
+
+**El prefijo es `springdoc:`, no `spring:`.** Escrito bajo `spring:` sería una propiedad inventada que
+Spring **ignora en silencio**: sin error, sin aviso, y el endpoint seguiría publicado.
+
+**El esquema `bearer` se declara pero no se aplica globalmente.** En esta API hay endpoints públicos
+(`GET /api/v1/pizzas`) y protegidos (`POST /api/v1/admin/pizzas`). Un requisito de seguridad global
+marcaría como privados los públicos, y quien integra acabaría mandando un token donde no hace falta.
+Cada operación declara el suyo en la historia que la crea.
+
+> Sobre anotaciones: **mínimas**. El contrato se deduce de los `record` DTO y de Bean Validation.
+> `@Schema` sólo cuando el nombre del campo no se explica solo. Ninguna anotación en el dominio.
 | Registro de admin | Sólo por script de bootstrap con variables de entorno. **Ninguna** ruta pública |
 | Filtros | Un `OncePerRequestFilter` propio + `SecurityContextHolder`. Sin anotaciones de seguridad en el dominio |
 

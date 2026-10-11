@@ -14,7 +14,7 @@
 |---|---|---|
 | `architecture.md` (este) | ✅ | Stack con versiones, diseño de capas de alto nivel, resultado del spike |
 | `data-model.md` | ❌ Sprint 5 (US-044) | Esquema de datos y su justificación |
-| `api-contract.md` | ❌ Sprint 1 (US-005) | Contrato HTTP endpoints, cuerpos y errores |
+| `api-contract.md` | ✅ Sprint 1 (US-005) | Contrato HTTP: convenciones, autenticación, catálogo de errores y endpoints |
 | `security.md` | ❌ Sprint 5 (US-044) | Modelo de amenazas y controles |
 | `openapi.json` | ❌ Sprint 5 (US-045) | Snapshot verificable del contrato |
 | ADR | Sólo [`ADR-0010`](../adr/0010-versiones-de-java-y-spring-boot.md) | ADR-0001…ADR-0009 están **referenciadas** en otros documentos pero aún no redactadas. No se enlazan aquí para no crear rutas rotas |
