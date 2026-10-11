@@ -60,7 +60,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 | [US-003](#us-003--esquema-inicial-y-flyway) | Esquema inicial y Flyway | S1 | Crítica | US-001, US-002 | 5 | Hecho |
 | [US-004](#us-004--estrategia-global-de-errores-y-validación) | Estrategia global de errores y validación | S1 | Alta | US-001 | 3 | Hecho |
 | [US-005](#us-005--documentación-openapi) | Documentación OpenAPI | S1 | Media | US-004 | 3 | Hecho |
-| [US-006](#us-006--pipeline-base-en-github-actions) | Pipeline base en GitHub Actions | S1 | Alta | US-001, US-003 | 5 | Pendiente |
+| [US-006](#us-006--pipeline-base-en-github-actions) | Pipeline base en GitHub Actions | S1 | Alta | US-001, US-003 | 5 | Hecho |
 
 #### US-001 — Esqueleto del proyecto y verificación del stack
 
@@ -205,6 +205,23 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   4. Falla si se detecta un secreto.
   5. Distintivo (badge) en el `README`.
 - **Tareas técnicas:** `.github/workflows/ci.yml`, `ci-integration.yml`, escaneo de secretos, `dependabot.yml` (Maven y Docker).
+- **Estado:** **Hecho** el 2026-10-11.
+- **Verificación con salida real**
+  1. ✅ `WorkflowFilesTest` (7 pruebas) lee los tres ficheros con SnakeYAML y comprueba que declaran `name`, `jobs` y `on:`, que fijan `java-version: '21'` con `distribution: temurin` y `cache: maven`, y que ejecutan `./mvnw -B -ntp verify`.
+  2. ✅ Se ejecuta `verify`, no `test`: las pruebas `*IT` viven en `verify` (Failsafe) y `test` no las lanza.
+  3. ✅ `ci-integration.yml` ejecuta `verify` sobre los runners de GitHub, donde Docker viene de serie para Testcontainers.
+  4. ✅ `gitleaks-action` con `fetch-depth: 0`, para recorrer el historial completo y no sólo el commit actual.
+  5. ✅ Distintivos de CI, Integración, Java 21 y Spring Boot en el `README`, que además documenta cómo arrancar, el stack, la arquitectura y el estado real del proyecto.
+- **Decisiones que conviene no deshacer**
+  - **`pull_request` además de `push`.** Los forks no disparan el `push` de su rama ni tienen acceso a secretos: es la única forma de comprobar un PR externo.
+  - **El pipeline no usa secretos propios.** Hay un test que lo comprueba: el único permitido es `GITHUB_TOKEN`, que GitHub emite por ejecución. Cualquier otro sería legible desde un fork.
+  - **`permissions: contents: read`.** Por defecto un workflow puede escribir en el repositorio; dejarlo en sólo lectura reduce el daño si algo se ejecuta por error.
+  - **`concurrency` cancela la ejecución anterior.** Sin eso, cinco pushes seguidos consumen cinco runners para comprobar el mismo commit cinco veces.
+  - **`ci.yml` y `ci-integration.yml` están separados.** Las pruebas de integración levantan PostgreSQL y tardan: mezcladas con las unitarias, cada push tardaría minutos y la señal tardía es la menos útil.
+  - **Dependabot agrupa por ecosistema.** Spring Boot, Flyway, Testcontainers y Jackson suben juntos: si el motor de Flyway y su módulo de Spring Boot se separan, las migraciones dejan de ejecutarse **y en silencio** (lo que pasó en US-003).
+- **Pendiente que deja esta historia**
+  - La ejecución real en los runners de GitHub **no se puede comprobar en local**: sólo se valida la estructura y el contenido. El primer `push` confirma el resto.
+  - Métricas, alarmas y CloudWatch → US-081.
 
 ---
 
@@ -510,13 +527,14 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 
 | ID | Título | Sprint | Prioridad | Depende de | Puntos | Estado |
 |---|---|---|---|---|---|---|
-| US-080 | Actuator, salud y métricas | S1 + S5 | Media | US-001, US-002 | 3 | Pendiente |
+| US-080 | Actuator, salud y métricas | S1 + S5 | Media | US-001, US-002 | 3 | En curso |
 | US-081 | Observabilidad en la nube | S9 | Baja | US-043, US-072 | 5 | Bloqueada |
 | US-082 | Evolución a RDS (evaluación y migración) | S9 | Baja | US-072 | 8 | Bloqueada |
 | US-083 | Frontend estático en S3 + CloudFront | Fuera del MVP | Fuera de alcance | Existe frontend | 5 | Descartada (MVP) |
 | US-084 | Estado final del portafolio | S9 | Media | Todas | 5 | Pendiente |
 
 - **US-080:** `/actuator/health` con detalle de base de datos; métricas; endpoints sensibles restringidos por perfil o rol; test de que `/actuator/env` no está expuesto en `prod`.
+  - **S1 cerrado 2026-10-11**: `/actuator/health` responde 200 con el detalle de PostgreSQL. `OpenApiDeshabilitadoIT` comprueba que, **sin** perfil (el que se parece a producción), `/actuator/env` → 404 y que los enlaces de `/actuator` sólo incluyen `health`, `info` y `metrics`, sin `env`, `configprops`, `beans`, `loggers`, `heapdump`, `threaddump` ni `mappings`. La parte de S5 (métricas publicadas, restricciones por rol) sigue abierta.
 - **US-081:** ADR de CloudWatch Logs con alarmas básicas, política de retención y coste. Sólo tras autorización.
 - **US-082:** ADR de diferencias operativas, coste y configuración segura (grupos de seguridad, sin exposición pública). Si se autoriza, la aplicación funciona cambiando **sólo** variables de entorno.
 - **US-083:** fuera del MVP. Se planifica cuando exista frontend; documenta la distinción entre S3 para imágenes, S3 para estáticos y CloudFront.
@@ -545,6 +563,7 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-11 | US-006 → **Hecho**. `ci.yml` (verificar, secretos, compose), `ci-integration.yml`, `dependabot.yml` y `README` con distintivos. `WorkflowFilesTest` valida los tres ficheros con SnakeYAML. US-080 parcial de S1: `/actuator/env` no expuesto y sólo `health`/`info`/`metrics` públicos. |
 | 2026-10-11 | US-005 → **Hecho**. OpenAPI publicado sólo en `local` y verificado con peticiones HTTP reales: 404 sin perfil, 200 con `local`, y el esquema `bearerAuth` leído del JSON generado. `api-contract.md` creado con el catálogo de 14 códigos de error. |
 | 2026-10-11 | US-004 → **Hecho**. Errores en `problem+json` con `code` estable, `timestamp` y `traceId`, y 9 escenarios de prueba. El estado HTTP lo decide una tabla, no la excepción. `@WebMvcTest` y `ObjectMapper` han cambiado de paquete en Spring Boot 4. |
 | 2026-10-11 | US-003 → **Hecho**. Las 8 tablas migradas por Flyway y 14 pruebas de integración sobre PostgreSQL real. Tres hallazgos: `spring-boot-flyway` es obligatorio en Boot 4 (sin él ninguna migración se ejecuta, en silencio); PostgreSQL rechaza expresiones en `UNIQUE` de tabla; y RN-IM-06 no lo puede cumplir la base, porque `NUMERIC(12,0)` redondea en silencio. Registrada la ambigüedad **D15** sobre dónde vive el estado del pago. |
