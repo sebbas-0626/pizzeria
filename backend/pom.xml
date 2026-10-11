@@ -112,6 +112,16 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Pruebas de la capa web: @WebMvcTest, MockMvc y los slices de test MVC.
+             Spring Boot 4 los movió a un starter propio: la clase WebMvcTest ya no está en
+             spring-boot-test-autoconfigure, sino en org.springframework.boot.webmvc.test.autoconfigure.
+             Sin este starter, @WebMvcTest no compila. Verificado el 2026-10-11 en US-004. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Testcontainers: gestor de contenedores para las pruebas de integración. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
