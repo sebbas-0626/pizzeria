@@ -1,0 +1,47 @@
+# ---------- Java / Maven ----------
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.jar
+*.war
+*.class
+.mvn/timestamps/
+
+# ---------- Spring Boot ----------
+spring-boot-devtools.properties
+application-local.yml.bak
+
+# ---------- Secretos: NUNCA versionar ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+
+# ---------- Configuración local ----------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+nbproject/
+!nbproject/private/
+
+# ---------- Sistema operativo ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Datos locales ----------
+*.log
+logs/
+.pgdata/
+
+# ---------- Informes generados ----------
+docs/architecture/openapi.generated.json

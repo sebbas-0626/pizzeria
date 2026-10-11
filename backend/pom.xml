@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Backend Pizzería · US-001
+
+  Stack y versiones: docs/adr/0010-versiones-de-java-y-spring-boot.md
+  Reglas del repositorio: AGENTS.md
+  Convenciones: docs/development/conventions.md y spring-conventions.md
+
+  Principio de versionado: todo lo que gestione el BOM de Spring Boot se declara SIN versión
+  (PostgreSQL, Flyway, Testcontainers, Mockito, JUnit, Jackson, Hibernate).
+  Sólo se fija versión de lo que Spring Boot no gestiona, y con el motivo escrito al lado.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <!-- Versión fijada en ADR-0010. No se sube a la ligera: cambiar el framework
+             exige revisar springdoc, Testcontainers y el resto del stack. -->
+        <version>4.1.1</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.pizzeria</groupId>
+    <artifactId>pizzeria-backend</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>pizzeria-backend</name>
+    <description>Backend de una pizzería: catálogo, pedidos para recogida presencial y pago en efectivo</description>
+
+    <properties>
+        <!-- ==================== Java ==================== -->
+        <!-- ADR-0010: Java 21 LTS es el objetivo, no el mínimo. -->
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <!-- Regla explícita del responsable: sin características preview. -->
+        <maven.compiler.enablePreview>false</maven.compiler.enablePreview>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!-- ==================== Versiones propias ==================== -->
+        <!-- Sólo lo que Spring Boot NO gestiona. -->
+        <archunit.version>1.5.1</archunit.version>
+
+        <!-- Construcción reproducible: misma entrada, mismo JAR. -->
+        <project.build.outputTimestamp>2026-10-11T00:00:00Z</project.build.outputTimestamp>
+    </properties>
+
+    <dependencies>
+
+        <!-- ==================== web ==================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Validación de formato en los DTOs. Las reglas de negocio viven en el dominio. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- ==================== persistencia ==================== -->
+        <!-- JPA sólo se usa en adapters.out.persistence. Nunca en el dominio (ADR-0003). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- El esquema es sólo de Flyway. ddl-auto=validate en todos los perfiles. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- El soporte de PostgreSQL es un módulo aparte desde Flyway 10. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ==================== operación ==================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- ==================== pruebas ==================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers: gestor de contenedores para las pruebas de integración. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Testcontainers 2.0 renombró los módulos: todos llevan ahora el prefijo
+             "testcontainers-" y las clases se movieron a paquetes por motor de base de datos.
+             Coordenadas verificadas contra el repositorio el 2026-10-11:
+               org.testcontainers:junit-jupiter         -> YA NO EXISTE en 2.0
+               org.testcontainers:testcontainers-junit-jupiter -> existe (2.0.5)
+               org.testcontainers.postgresql          -> org.testcontainers:testcontainers-postgresql
+               org.testcontainers.containers.PostgreSQLContainer
+                                                     -> org.testcontainers.postgresql.PostgreSQLContainer -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Reglas de dependencia entre capas, verificadas en cada build.
+             Se usa el módulo core (no archunit-junit5) a propósito: las reglas se ejecutan
+             desde tests JUnit normales, sin depender del motor de ArchUnit ni de su
+             compatibilidad con la versión de JUnit que fije Spring Boot. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit</artifactId>
+            <version>${archunit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+          Dependencias que se añaden más adelante, y por qué no están aquí:
+
+            - spring-boot-starter-security + oauth2-resource-server → US-021 (Sprint 4).
+              Añadirlas ahora activaría la autoconfiguración de seguridad por defecto
+              y bloquearía los endpoints, incluidos los de actuator, sin que todavía
+              exista configuración de seguridad que lo resuelva intencionadamente.
+
+            - springdoc-openapi 3.x → US-005. Su matriz oficial declara compatibilidad
+              con Spring Boot 4.x pero sólo enumera la línea 4.0.x. Se añade tras
+              verificar en el spike de US-001, no antes. Ver spring-conventions.md §5.
+
+            - software.amazon.awssdk:* → US-050 y US-060 (Sprints 6 y 7).
+              Además de llegar tarde, el requisito RNF-05 pide que el perfil por
+              defecto arranque sin ningún servicio de AWS.
+
+            - Lombok → nunca. Ver conventions.md §2.
+        -->
+
+    </dependencies>
+
+    <build>
+        <finalName>pizzeria-backend</finalName>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!--
+              Enforcer: convierte el ADR-0010 en una regla que se verifica sola.
+              Con JDK 17 el build falla aquí, con un mensaje claro, en lugar de fallar
+              más tarde con un error de bytecode incomprensible.
+              Rango [21,) y no una ventana cerrada: Spring Boot admite 17..26.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>verificar-entorno</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                    <message>
+                                        El proyecto exige Java 21 LTS (ADR-0010).
+                                        Versión detectada: ${java.version}.
+                                        Instala Eclipse Temurin 21 y define JAVA_HOME.
+                                    </message>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.9.9,)</version>
+                                    <message>
+                                        El proyecto está validado con Maven 3.10.0.
+                                        Usa el Maven Wrapper: ./mvnw
+                                    </message>
+                                </requireMavenVersion>
+                                <banDuplicatePomDependencyVersions/>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--
+              Pruebas de integración (*IT). Se ejecutan en la fase verify, después de
+              empaquetar, y no en la fase test: tardan y necesitan Docker.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--
+              Cobertura medida por paquete, para poder distinguir "muchas líneas getters"
+              de "reglas de negocio probadas". El informe se genera en verify.
+              Los umbrales por capa se fijan en el Sprint 5 (US-044).
+            -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+                <executions>
+                    <execution>
+                        <id>preparar-agente</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>informe</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

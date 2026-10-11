@@ -1,0 +1,28 @@
+# Perfil de desarrollo local. Se activa con:
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+#
+# Las credenciales NUNCA están aquí: llegan por variable de entorno desde el archivo .env,
+# que está en .gitignore. Si la variable falta, la aplicación falla al arrancar en lugar de
+# arrancar con una contraseña inventada.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:pizzeria}
+    # Sin valor por defecto a propósito: si falta, el error lo dice claramente.
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  jpa:
+    show-sql: false
+
+management:
+  endpoint:
+    health:
+      # Sólo en local: el detalle de los componentes ayuda a depurar.
+      # En cualquier otro entorno sigue siendo never (application.yml).
+      show-details: always
+
+logging:
+  level:
+    com.pizzeria: DEBUG
+    org.hibernate.SQL: DEBUG

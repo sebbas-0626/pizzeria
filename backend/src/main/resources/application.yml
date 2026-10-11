@@ -1,0 +1,49 @@
+# Configuración común a todos los entornos.
+#
+# Aquí sólo va lo que es cierto en todas partes. Cada perfil añade lo suyo.
+# Reglas: docs/development/spring-conventions.md §2.2
+
+spring:
+  application:
+    name: pizzeria-backend
+
+  jpa:
+    hibernate:
+      # El esquema es sólo de Flyway. Nunca create ni update: si una migración no está
+      # escrita, el arranque falla con un mensaje claro en lugar de "arreglar" la tabla solo.
+      ddl-auto: validate
+    # Evita que la vista HTML dispare consultas perezosas fuera de una transacción.
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    # Impide que alguien ejecute flyway:clean por descuido sobre una base con datos.
+    clean-disabled: true
+
+server:
+  port: 8080
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Lista mínima. actuator/env y actuator/configprops NO se exponen:
+        # pueden filtrar secretos aunque no haya usuario configurado.
+        include: health,info,metrics
+  endpoint:
+    health:
+      # Pasa a when-authorized cuando exista Spring Security (US-021).
+      show-details: never
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.pizzeria: INFO

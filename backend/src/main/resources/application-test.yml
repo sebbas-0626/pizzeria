@@ -1,0 +1,24 @@
+# Perfil de pruebas.
+#
+# No define datasource: en las pruebas de integración lo aporta Testcontainers mediante
+# @ServiceConnection, de modo que la base de datos es un PostgreSQL real y aislado.
+# Ver spring-conventions.md §6.3. H2 queda descartado a propósito: miente sobre tipos
+# numéricos y restricciones, que es justo lo que este proyecto necesita verificar.
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    clean-disabled: true
+
+logging:
+  level:
+    com.pizzeria: DEBUG
+    # Testcontainers es ruidoso: sólo interesa su resultado, no su conversación con Docker.
+    org.testcontainers: INFO
+    com.github.dockerjava: WARN
