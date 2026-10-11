@@ -1,0 +1,92 @@
+# Entorno local de desarrollo.
+#
+#   Copia .env.example a .env en la raíz del repositorio y ejecuta scripts/dev-up.ps1
+#
+# Decisiones que no son evidentes y conviene no deshacer sin leer el porqué:
+#
+#   - La app se ejecuta con la imagen de Maven, NO con una imagen propia. El Dockerfile
+#     multi-stage de producción es US-070 (Sprint 8). Aquí se quiere recargar código al
+#     instante, y la imagen de Maven da eso sin compilar dos veces.
+#
+#   - Se usa el `mvn` que ya viene en la imagen, no `./mvnw`. El wrapper verifica el
+#     SHA-256 de la distribución y para eso necesita el comando `unzip`, que esta imagen
+#     NO trae (comprobado). El `mvn` de la imagen es 3.10.0, exactamente la versión
+#     fijada en ADR-0010, así que el Enforcer la acepta.
+#
+#   - PostgreSQL NO publica puerto en el host. Sólo la app habla con él, por la red
+#     interna de Compose. Es un criterio de aceptación de US-002 y también una
+#     reducción de superficie: nada del host alcanza la base de datos.
+#
+#   - El caché de Maven y el de compilación son volúmenes con nombre. Así el build no
+#     ensucia el `target/` del host (Windows) con clases compiladas en Linux, que
+#     romperían el `./mvnw verify` del host, y la segunda ejecución es mucho más rápida.
+
+name: pizzeria
+
+services:
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?falta POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
+    volumes:
+      # Volumen con nombre: los datos sobreviven a `docker compose down`.
+      # Sólo `down -v` los destruye. Criterio de aceptación de US-002.
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready es la forma barata de saber que Postgres acepta conexiones.
+      # El `app` no arranca hasta que esto esté en verde (depends_on condition).
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  app:
+    # Versión explícita, nunca `latest`: el mismo criterio que el Maven Wrapper.
+    image: maven:3.10.0-eclipse-temurin-21
+    working_dir: /workspace
+    depends_on:
+      db:
+        # No basta con esperar a que " arranque": arrancaría en cualquier orden y
+        # fallaría. La app sólo se levanta cuando la base está realmente sana.
+        condition: service_healthy
+    environment:
+      # `db` es el nombre del servicio en la red de Compose. Dentro de la red, el puerto
+      # es el 5432 interno: por eso aquí NO se usa el puerto publicado en el host.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:?falta POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?falta POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en .env}
+    volumes:
+      - ../../backend:/workspace
+      # Cachés en volúmenes con nombre, no en el disco del host.
+      - maven-cache:/root/.m2
+      - app-target:/workspace/target
+    command:
+      - mvn
+      - -B
+      - -ntp
+      - spring-boot:run
+      - -Dspring-boot.run.profiles=local
+    ports:
+      # Sólo la API se publica. Es lo que permite abrir Swagger en el navegador.
+      - "8080:8080"
+    healthcheck:
+      # Se comprueba la palabra "UP" del cuerpo, no sólo el código 200: un healthcheck
+      # que sólo mira el código daría verde con la base de datos caída.
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      # Margen para la primera compilación dentro del contenedor.
+      start_period: 90s
+
+volumes:
+  postgres-data:
+  maven-cache:
+  app-target:

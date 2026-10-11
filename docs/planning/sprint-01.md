@@ -18,7 +18,7 @@
 | Decisión D1 (moneda) resuelta | ✅ Hecho — **COP, sin decimales** |
 | `backend/pom.xml` creado | ✅ Hecho |
 | Repositorio inicializado en Git | ⬜ Pendiente |
-| **JDK 21 (Temurin) instalado y `JAVA_HOME` definido** | ⬜ **Pendiente — bloqueante** |
+| **JDK 21 (Temurin) instalado y `JAVA_HOME` definido** | ✅ Hecho — `Temurin-21.0.12.1+1`, `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot\` |
 | Maven Wrapper 3.10.0 generado (`./mvnw`) | ✅ Hecho — checksum SHA-256 fijado y validado |
 | Docker disponible en la máquina | ✅ Hecho (Docker 24.0.7) |
 
@@ -49,21 +49,41 @@ todavía **no existe la clase principal**, que es precisamente la siguiente tare
    no lo trae. Está anotado en `maven-wrapper.properties` y habrá que tenerlo presente en el Dockerfile
    de CI.
 
-### ⚠️ Entorno detectado (2026-10-11)
+### Verificación del stack ejecutada de nuevo el 2026-10-11 (local)
+
+Con Temurin 21.0.12.1 ya instalado y `JAVA_HOME` definido, `./mvnw -B verify` completa en verde:
+
+```text
+Rule 0: RequireJavaVersion passed
+Rule 1: RequireMavenVersion passed
+[INFO] Compiling 2 source files with javac [debug parameters release 21] to target\classes
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0 -- in com.pizzeria.architecture.ArchitectureRulesTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0 -- in com.pizzeria.PizzeriaApplicationIT
+Database version: 17.11
+[INFO] BUILD SUCCESS
+[INFO] Total time:  22.757 s
+```
+
+El fallo anterior (`Unable to find main class`) ya no aparece. El resultado del spike está publicado en
+[`architecture.md` §4](../architecture/architecture.md), junto con dos hallazgos abiertos: el requisito de
+`unzip` en la imagen de build y el autoenganche de agente de Mockito, que un JDK futuro rechazará.
+
+### Entorno detectado (2026-10-11, revisado tras instalar Temurin 21)
 
 | Comprobación | Resultado | Consecuencia |
 |---|---|---|
-| `java -version` | **Oracle JDK 22.0.2** — no es LTS y no es el 21 del ADR | El Enforcer `[21,)` **lo acepta**, así que el build no fallaría, pero las pruebas se ejecutarían en 22 mientras CI usa 21. Esa divergencia es exactamente la que produce «funciona en mi máquina» |
-| `JAVA_HOME` | **No definido** | Maven elegiría el JDK por defecto del sistema |
-| `mvn` | **No instalado** | Se usará el Maven Wrapper, que se auto-instala en la primera ejecución |
-| `docker` | 24.0.7 ✅ | Correcto |
+| `java -version` | **Temurin 21.0.12.1+1 (LTS)** ✅ | Compila, prueba y ejecuta en el JDK del ADR |
+| `JAVA_HOME` | **Definido** → `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot\` ✅ | Maven usa el JDK correcto y no el del sistema |
+| `mvn` | **No instalado** | Se usa el Maven Wrapper 3.10.0, que se auto-instala en la primera ejecución |
+| `docker` | 24.0.7 ✅ | Correcto para Testcontainers |
 
-**Acción requerida antes de dar por bueno US-001:** instalar **Eclipse Temurin 21** y definir `JAVA_HOME`
-para que compilación, pruebas y CI usen exactamente la misma versión.
+**Divergencia resuelta.** Antes de esta corrección el entorno tenía Oracle JDK 22.0.2 sin `JAVA_HOME`: el
+Enforcer `[21,)` lo aceptaba, de modo que el build no fallaba pero las pruebas se ejecutaban en 22 mientras
+CI usa 21. Esa divergencia es exactamente la que produce «funciona en mi máquina».
 
 **Sobre el rango `[21,)`.** Es intencionadamente una ventana abierta y no una versión exacta: Spring Boot
 admite de 17 a 26 y no queremos bloquear a nadie con un JDK superior. Pero la convención «local y CI con la
-misma versión» se mantiene como norma del proyecto, y por eso hace falta instalar el 21.
+misma versión» se mantiene como norma del proyecto, y por eso hace falta el 21 instalado.
 
 ---
 
@@ -75,21 +95,21 @@ misma versión» se mantiene como norma del proyecto, y por eso hace falta insta
 
 #### Tareas
 
-- [ ] Inicializar el repositorio Git en la raíz del monorepo
-- [ ] Crear `backend/pom.xml` con el parent de Spring Boot 4.1.x
-- [ ] Declara `<java.version>21</java.version>` (el parent lo traduce a `--release 21`)
+- [x] Inicializar el repositorio Git en la raíz del monorepo
+- [x] Crear `backend/pom.xml` con el parent de Spring Boot 4.1.x
+- [x] Declara `<java.version>21</java.version>` (el parent lo traduce a `--release 21`)
 - [x] Añadir `maven-enforcer-plugin` con `requireJavaVersion [21,)` y `requireMavenVersion`
 - [x] Añadir Maven Wrapper **3.10.0** (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`) con checksum SHA-256 fijado
-- [ ] Generar **`.gitignore`** (el build ya genera `target/`, que no debe versionarse)
-- [ ] Crear `com.pizzeria.PizzeriaApplication`
-- [ ] Crear `common/domain/DomainException.java`
-- [ ] Crear `application.yml`, `application-local.yml`, `application-test.yml`
-- [ ] Activar `spring-boot-starter-actuator` y exponer `health` (US-080 parcial)
-- [ ] Escribir el test **ArchUnit** con las 5 reglas de dependencia
-- [ ] Escribir `PizzeriaApplicationTests` (carga de contexto)
-- [ ] Crear `.editorconfig` y `.gitignore` (Java + `.env`)
-- [ ] Crear `docs/architecture/architecture.md` con la tabla de stack
-- [ ] **Spike de verificación** (ver §2)
+- [x] Generar **`.gitignore`** (el build ya genera `target/`, que no debe versionarse)
+- [x] Crear `com.pizzeria.PizzeriaApplication`
+- [x] Crear `common/domain/DomainException.java`
+- [x] Crear `application.yml`, `application-local.yml`, `application-test.yml`
+- [x] Activar `spring-boot-starter-actuator` y exponer `health` (US-080 parcial)
+- [x] Escribir el test **ArchUnit** con las 5 reglas de dependencia
+- [x] Escribir el test de carga de contexto → es `PizzeriaApplicationIT`, **no** `PizzeriaApplicationTests`: la carga de contexto completa necesita un PostgreSQL real, así que es un `*IT` que ejecuta Failsafe y no corre en cada `mvn test`. Cubre el criterio 5 igual, pero es más lenta
+- [x] Crear `.editorconfig` y `.gitignore` (Java + `.env`)
+- [x] Crear `docs/architecture/architecture.md` con la tabla de stack
+- [x] **Spike de verificación** (ver §2) — 5 de 5 pruebas hechas, incluidas springdoc 3.1.1
 
 #### Criterios de aceptación
 
@@ -101,15 +121,86 @@ misma versión» se mantiene como norma del proyecto, y por eso hace falta insta
 | 4 | Sin dependencias de AWS | Revisión del árbol de dependencias |
 | 5 | Test de carga de contexto verde | JUnit |
 | 6 | Test ArchUnit verde | JUnit |
-| 7 | El build falla con un JDK < 21 | Ejecutar `mvnw` con `JAVA_HOME` apuntando a un JDK 17: debe fallar |
+| 7 | El build falla con un JDK < 21 | Ejecutar `mvnw` con `JAVA_HOME` apuntando a un JDK 17: debe fallar. Es una prueba negativa; el trabajo real es siempre con 21 |
 
 #### Pruebas requeridas
 
 | Prueba | Tipo | Qué verifica |
 |---|---|---|
-| `PizzeriaApplicationTests` | Contexto Spring | La aplicación arranca |
+| `PizzeriaApplicationIT` | Contexto Spring + Testcontainers | La aplicación arranca contra un PostgreSQL 17 real |
 | `ArchitectureRulesTest` | ArchUnit (puro) | Las 5 reglas de dependencia entre capas |
-| Verificación manual | Enforcer | Falla el build con JDK 17 |
+| Verificación manual | Enforcer | Con un JDK antiguo el build **falla**. Prueba negativa: Java 17 no se usa nunca para trabajar |
+
+#### Verificación de los criterios de aceptación (2026-10-11)
+
+| # | Criterio | Estado | Evidencia |
+|---|---|---|---|
+| 1 | `./mvnw verify` compila, pasa los tests y empaqueta | ✅ | `BUILD SUCCESS` en 20,832 s · 6 unitarias + 1 de integración · `Building jar: pizzeria-backend.jar` |
+| 2 | Bytecode versión 65 | ✅ | `javap -verbose` → `major version: 65`; log del compilador `javac [debug parameters release 21]` |
+| 3 | Arranca en `local` y `/actuator/health` = `UP` | ✅ | `Started PizzeriaApplication in 2.854 seconds` → `HTTP 200` con `{"status":"UP","components":{"db":{"details":{"database":"PostgreSQL"},"status":"UP"},…}}` |
+| 4 | Sin dependencias de AWS | ✅ | `dependency:list` sin un solo `software.amazon.awssdk` |
+| 5 | Test de carga de contexto verde | ✅ | `Tests run: 1, Failures: 0, Errors: 0` en `PizzeriaApplicationIT` |
+| 6 | Test ArchUnit verde | ✅ | `Tests run: 6, Failures: 0, Errors: 0` en `ArchitectureRulesTest` |
+| 7 | El build falla con un JDK < 21 | ✅ | Con `JAVA_HOME=C:\Program Files\Java\jdk-17`: `BUILD FAILURE` + `RequireJavaVersion failed` |
+| 8 | Spike de la matriz | ✅ | `springdoc-openapi:3.1.1` compila sobre Boot 4.1.1; `/v3/api-docs` → 200 en `local`, **404 sin perfil**; Swagger UI igual |
+
+**Detalle del spike de springdoc.** Era la parte más delicada del sprint, así que se probó de verdad:
+dependencia añadida, `./mvnw verify` en verde, arranque real y petición HTTP a los dos endpoints.
+
+| Escenario | `/v3/api-docs` | `/swagger-ui/index.html` |
+|---|---|---|
+| Con perfil `local` | **HTTP 200** (OpenAPI 3.1.0) | **HTTP 200** |
+| Sin perfil (simula producción) | **HTTP 404** | **HTTP 404** |
+
+**Segundo fallo encontrado por el spike.** Al arrancar, springdoc avisó:
+
+```text
+WARN SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production…
+```
+
+Es decir: instalar la dependencia **publicaba el mapa completo de la API en todos los entornos**, producción
+incluida, sin pedirlo. No lo detecta ningún test de arranque; sólo aparece si alguien lee el log.
+
+**Corrección:** `application.yml` apaga `springdoc.api-docs.enabled` y `springdoc.swagger-ui.enabled`;
+`application-local.yml` los enciende. Verificado con los 404 de la tabla.
+
+*Trampa evitada en el intento:* la primera corrección se escribió bajo `spring:` en vez de `springdoc:`.
+Spring no habría dado ningún error — simplemente habría ignorado una propiedad que no existe y el endpoint
+habría seguido publicado. Un fallo silencioso es el peor de los dos tipos de fallo, porque aparenta estar
+arreglado: el build pasa, los tests pasan y el agujero sigue abierto.
+
+**Cómo se ejecutó el criterio 3.** El perfil `local` exige un PostgreSQL real y lee las credenciales de
+variables de entorno (`application-local.yml`); no hay H2 ni base en memoria. Para la comprobación se levantó
+un contenedor **temporal** `postgres:17-alpine` en el puerto **15432** —el 5432 ya estaba ocupado por otro
+servicio de la máquina y el 55432 cae en un rango de puertos reservado por Windows— con credenciales de
+usar y tirar escritas **sólo** en el entorno de la consola, nunca en un archivo. Al terminar se detuvieron
+el proceso y el contenedor. La versión permanente de este entorno es **US-002** (Docker Compose + `.env.example`).
+
+#### Fallo encontrado y corregido por el criterio 7
+
+La prueba negativa **desmintió a sí misma** en la primera ejecución. El build fallaba correctamente, pero
+el mensaje mostraba información falsa:
+
+```text
+[ERROR] El proyecto exige Java 21 LTS (ADR-0010).
+[ERROR] Versión detectada: 21.              ← FALSO: el JDK real era 17.0.12
+```
+
+**Causa:** dentro del mensaje, `${java.version}` resuelve a la propiedad `<java.version>21</java.version>` del
+propio `pom.xml`, que **tapa** la propiedad de sistema del JVM con el mismo nombre. El mensaje anunciaba la
+versión declarada, no la detectada, justo cuando más falta hacía saber cuál era.
+
+**Corrección:** `backend/pom.xml` usa `${java.home}`, que nadie más define en el proyecto y por tanto sí
+resuelve al JDK real. Verificado:
+
+```text
+[ERROR] El proyecto exige Java 21 LTS (ADR-0010).
+[ERROR] JAVA_HOME detectado: C:\Program Files\Java\jdk-17.
+[ERROR] Instala Eclipse Temurin 21 y define JAVA_HOME.
+```
+
+**Lección:** un criterio de aceptación que sólo dice «falla» no es suficiente. Hubo que **leer el mensaje**
+para saber si el guardián estaba mintiendo o no. Cuando el mensaje de un error importa, se prueba el mensaje.
 
 #### Definition of Done
 
@@ -121,28 +212,43 @@ Además de la [DoD global](definition-of-done.md): el spike de §2 documenta el 
 
 #### Tareas
 
-- [ ] `infra/local/docker-compose.yml` con servicio `db` y servicio `app`
-- [ ] `infra/local/docker-compose.test.yml` para el perfil de integración
-- [ ] `.env.example` (plantilla); `.env` en `.gitignore`
-- [ ] `scripts/dev-up.ps1` y `scripts/dev-down.ps1`
-- [ ] Healthcheck de PostgreSQL con `pg_isready`
-- [ ] Healthcheck de la aplicación contra `/actuator/health`
-- [ ] Volumen nombrado para los datos
-- [ ] PostgreSQL **sin** puerto publicado en el host
+- [x] `infra/local/docker-compose.yml` con servicio `db` y servicio `app`
+- [x] `infra/local/docker-compose.test.yml` para el perfil de integración
+- [x] `.env.example` (plantilla); `.env` en `.gitignore` → en `infra/local/`, ver nota
+- [x] `scripts/dev-up.ps1` y `scripts/dev-down.ps1`
+- [x] Healthcheck de PostgreSQL con `pg_isready`
+- [x] Healthcheck de la aplicación contra `/actuator/health`
+- [x] Volumen nombrado para los datos
+- [x] PostgreSQL **sin** puerto publicado en el host
 
 #### Criterios de aceptación
 
-| # | Criterio | Verificación |
-|---|---|---|
-| 1 | `docker compose up --build` deja ambos servicios `healthy` en < 90 s | `docker compose ps` |
-| 2 | Los datos sobreviven a un reinicio | Parar y arrancar el servicio |
-| 3 | El puerto de la base de datos no está publicado | `docker compose ps` |
-| 4 | Ninguna credencial real en el repositorio | Revisión del diff + `.gitignore` |
-| 5 | `docker compose down -v` deja el entorno limpio | Ejecutar y comprobar |
+| # | Criterio | Verificación | Resultado (2026-10-11) |
+|---|---|---|---|
+| 1 | `docker compose up --build` deja ambos servicios `healthy` en < 90 s | `docker compose ps` | ✅ **60,8 s** en frío, **50,4 s** en caliente |
+| 2 | Los datos sobreviven a un reinicio | Parar y arrancar el servicio | ✅ 1 fila antes de `restart db`, 1 fila después |
+| 3 | El puerto de la base de datos no está publicado | `docker compose ps` | ✅ `5432/tcp` sin mapeo; `localhost:5432` no responde |
+| 4 | Ninguna credencial real en el repositorio | Revisión del diff + `.gitignore` | ✅ `git check-ignore` marca `.env`; `.env.example` versionado con valores de mentira |
+| 5 | `docker compose down -v` deja el entorno limpio | Ejecutar y comprobar | ✅ 0 contenedores y 0 volúmenes del proyecto |
 
 #### Pruebas requeridas
 
-Job de CI que levanta el entorno, consulta `/actuator/health` y lo destruye.
+Job de CI que levanta el entorno, consulta `/actuator/health` y lo destruye. **Pendiente: es US-006.**
+
+#### Dos decisiones que conviene no deshacer sin leer el porqué
+
+1. **`.env` vive en `infra/local/`, no en la raíz del repositorio.** Compose busca el archivo `.env` en el
+   directorio del propio compose. En la raíz, el comando del criterio 1 fallaría pidiendo `POSTGRES_USER`
+   sin una razón evidente. `scripts/dev-up.ps1` lo crea solo si falta.
+
+2. **La app usa `mvn`, no `./mvnw`.** Comprobado dentro de `maven:3.10.0-eclipse-temurin-21`:
+   `curl` ✅ · `wget` ✅ · `bash` ✅ · `mvn` 3.10.0 ✅ · **`unzip` ❌**. El wrapper necesita `unzip` para validar
+   el SHA-256 de la distribución, así que dentro del contenedor fallaría. El `mvn` de la imagen es 3.10.0,
+   exactamente la versión de ADR-0010, y el Enforcer la acepta.
+
+Además: los cachés de Maven y de compilación (`maven-cache`, `app-target`) son volúmenes con nombre. Sin
+ello, el `target/` del host —Windows— se llenaría de clases compiladas en Linux y el `./mvnw verify` local
+empezaría a fallar con errores de permisos.
 
 ---
 
@@ -336,7 +442,7 @@ docs/planning/roadmap.md                          (S1 → Hecho)
 - [ ] Test ArchUnit verde sobre el esqueleto
 - [ ] Workflow de CI en verde en un `push` real
 - [ ] `gitleaks detect` sin hallazgos
-- [ ] `docs/architecture/architecture.md` con la tabla de stack y el resultado del spike
+- [x] `docs/architecture/architecture.md` con la tabla de stack y el resultado del spike
 - [ ] `backlog.md` con US-001…US-006 en `Hecho`
 - [ ] Ningún secreto en el repositorio
 

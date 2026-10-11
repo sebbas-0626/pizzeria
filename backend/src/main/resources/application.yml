@@ -47,3 +47,18 @@ logging:
   level:
     root: INFO
     com.pizzeria: INFO
+
+# Documentación de la API (springdoc).
+#
+# springdoc se activa POR DEFECTO en cuanto está en el classpath: sin estas dos líneas
+# el mapa completo de la API quedaría publicado en cualquier entorno, incluido producción.
+# Aquí se apaga en la base y se enciende sólo en local (application-local.yml).
+#
+# Ojo con el prefijo: es `springdoc:`, no `spring:`. Escrito bajo `spring:` sería una
+# propiedad inventada que Spring ignorea en silencio, sin error y sin aviso, y el
+# seguiría expuesto. Un fallo silencioso es peor que uno ruidoso.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

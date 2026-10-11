@@ -1,0 +1,43 @@
+# Normalización de finales de línea.
+#
+# Motivo: sin este archivo, `core.autocrlf` decide por su cuenta. En un equipo donde
+# uno trabaja en Windows y otro en Linux (y CI siempre en Linux) eso produce diffs
+# enteros de archivo entero por un retorno de carro, o el error
+#   fatal: LF would be replaced by CRLF in <archivo>
+# que aparece al hacer `git add` cuando core.safecrlf está activo.
+#
+# Aquí se fija el criterio, y coincide con .editorconfig (end_of_line = lf):
+#
+#   - El repositorio guarda SIEMPRE LF, en cualquier sistema operativo.
+#   - La carpeta de trabajo usa LF salvo en los archivos que de verdad lo necesitan.
+#   - `* text=auto` deja que Git decida archivo por archivo si es texto; los binarios
+#     no se tocan porque text=auto los detecta y los excluye.
+#
+# Por qué .gitattributes y no `git config`: el ajuste local sirve sólo en esta máquina.
+# Éste viaja con el código, así que un clone nuevo en Windows o en Linux ya funciona
+# sin que nadie tenga que acordarse de configurar nada.
+
+* text=auto eol=lf
+
+# Archivos de Windows que necesitan CRLF de verdad: los scripts .cmd no se ejecutan
+# correctamente si tienen finales LF. Es la única excepción, y .editorconfig la
+# declara también.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binarios: nunca se deben normalizar sus finales de línea. Convertirlos sería
+# corromper el archivo.
+*.jar binary
+*.war binary
+*.zip binary
+*.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.p12 binary
+*.jks binary
+*.pem binary
+*.key binary

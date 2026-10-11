@@ -1,0 +1,47 @@
+# Perfil de integración: como docker-compose.yml, pero con datos desechables.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up
+#
+# Diferencias con el entorno de desarrollo, y por qué:
+#
+#   - Base de datos SIN volumen. Cada ejecución parte de cero, así que un esquema
+#     migrado a medias o datos de la ejecución anterior no pueden falsear un test.
+#
+#   - Perfil `test` de Spring en lugar de `local`: el perfil local enciende Swagger y
+#     el detalle del health, que aquí sobran.
+#
+#   - Puerto 8081 en el host para no chocar con el entorno de desarrollo, que sigue
+#     levantado. No se puede probar el catálogo contra un entorno contaminado por otro.
+#
+# A diferencia del entorno de desarrollo, aquí SÍ se publica el puerto de PostgreSQL:
+# lo necesita un proceso que corre fuera de Compose (por ejemplo, un cliente SQL o una
+# herramienta de inspección). En desarrollo no se publica por criterio de US-002.
+
+services:
+
+  db:
+    volumes: !reset []
+    ports:
+      - "5433:5432"
+
+  app:
+    command:
+      - mvn
+      - -B
+      - -ntp
+      - spring-boot:run
+      - -Dspring-boot.run.profiles=test
+    ports:
+      - "8081:8080"
+    environment:
+      # El perfil test no lee POSTGRES_* (los aporta Testcontainers), pero JPA sí
+      # necesita un datasource para arrancar. Se apunta al servicio db de Compose.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s

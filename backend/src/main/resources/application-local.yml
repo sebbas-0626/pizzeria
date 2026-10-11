@@ -22,6 +22,15 @@ management:
       # En cualquier otro entorno sigue siendo never (application.yml).
       show-details: always
 
+# La documentación de la API se abre aquí y en ningún otro sitio.
+# En application.yml está apagada: sin esto springdoc publicaría /v3/api-docs
+# también en producción. US-005 completará la configuración con el esquema bearer.
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 logging:
   level:
     com.pizzeria: DEBUG

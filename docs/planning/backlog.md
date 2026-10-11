@@ -55,8 +55,8 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 
 | ID | Título | Sprint | Prioridad | Depende de | Puntos | Estado |
 |---|---|---|---|---|---|---|
-| [US-001](#us-001--esqueleto-del-proyecto-y-verificación-del-stack) | Esqueleto del proyecto y verificación del stack | S1 | Crítica | — | 3 | Pendiente |
-| [US-002](#us-002--composición-local-con-docker-compose) | Composición local con Docker Compose | S1 | Alta | US-001 | 5 | Pendiente |
+| [US-001](#us-001--esqueleto-del-proyecto-y-verificación-del-stack) | Esqueleto del proyecto y verificación del stack | S1 | Crítica | — | 3 | Hecho |
+| [US-002](#us-002--composición-local-con-docker-compose) | Composición local con Docker Compose | S1 | Alta | US-001 | 5 | Hecho |
 | [US-003](#us-003--esquema-inicial-y-flyway) | Esquema inicial y Flyway | S1 | Crítica | US-001, US-002 | 5 | Pendiente |
 | [US-004](#us-004--estrategia-global-de-errores-y-validación) | Estrategia global de errores y validación | S1 | Alta | US-001 | 3 | Pendiente |
 | [US-005](#us-005--documentación-openapi) | Documentación OpenAPI | S1 | Media | US-004 | 3 | Pendiente |
@@ -67,6 +67,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 **Como** desarrollador, **quiero** un proyecto Maven que arranque y verifique su build con un único comando, **para** tener una base reproducible antes de escribir funcionalidad.
 
 - **Prioridad:** Crítica · **Dependencias:** — · **Estimación:** 3
+- **Estado:** **Hecho** el 2026-10-11. Los 8 criterios verificados con salida real.
 - **Criterios de aceptación**
   1. `./mvnw verify` compila, pasa los tests y empaqueta un JAR ejecutable.
   2. El bytecode generado es de versión 65 (Java 21) y el build usa `--release 21`.
@@ -74,7 +75,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   4. No hay ninguna dependencia de AWS en el perfil por defecto.
   5. Existe un test de carga de contexto de Spring vacío.
   6. Un test **ArchUnit** verifica las reglas de dependencia entre capas sobre el esqueleto vacío.
-  7. Maven Enforcer rechaza el build si la versión de Java es inferior a 21.
+  7. Maven Enforcer rechaza el build si la versión de Java es inferior a 21. Es una **prueba negativa**: el proyecto **nunca** se compila ni se ejecuta con un JDK 17; sólo se comprueba que el guardián cierra.
   8. **Spike verificado**: la matriz Spring Boot 4.1.x + JDK 21 + Testcontainers 2.x + Mockito + springdoc 3.x compila y ejecuta un test unitario y uno de integración.
 - **Tareas técnicas**
   - `backend/pom.xml` con parent de Spring Boot, `<java.version>21</java.version>`, Maven Wrapper 3.10.0 y `maven-enforcer-plugin` (`requireJavaVersion [21,)`).
@@ -83,13 +84,14 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   - Test de arquitectura ArchUnit.
   - `docs/architecture/architecture.md` con la tabla de stack.
 - **Pruebas requeridas**
-  - `PizzeriaApplicationTests`: carga de contexto.
+  - `PizzeriaApplicationIT`: carga de contexto contra PostgreSQL real. Es un `*IT` y no un `*Test` porque la carga completa necesita la base de datos; Failsafe lo ejecuta en `verify`.
   - `ArchitectureRulesTest` (ArchUnit): las 5 reglas de la tabla de `spring-conventions.md`.
-  - `EnforcerTest`: no automatizable; se verifica en CI que un JDK antiguo falla.
+  - `EnforcerTest`: no automatizable; en local y en CI se verifica que con un JDK antiguo (17) el build **falla**. Java 17 no se usa nunca para trabajar: el objetivo, las pruebas y el runtime son 21.
 - **Definición de terminado:** [DoD completa](definition-of-done.md).
 - **Riesgos / decisiones pendientes**
   - springdoc 3.x declara compatibilidad con Boot 4.x pero su matriz oficial sólo lista Boot 4.0.x → **plan B**: si falla, fijar Boot 4.0.x o documentar el contrato a mano (US-005).
-  - Testcontainers 2.0 renombró módulos y paquetes → verificar la nomenclatura exacta en este spike.
+    - **Resuelto 2026-10-11**: `springdoc-openapi:3.1.1` se construye sobre `spring-boot-starter-parent` 4.1.0. Instalado y verificado: `/v3/api-docs` responde 200 en `local` y **404 sin perfil**, y Swagger UI igual. US-005 añade el esquema bearer y `api-contract.md`.
+  - Testcontainers 2.0 renombró módulos y paquetes → **resuelto**: `org.testcontainers:testcontainers-postgresql` con la clase `org.testcontainers.postgresql.PostgreSQLContainer`.
   - Si el spike fuerza a bajar a Spring Boot 3.5.x, **Java 21 sigue siendo válido** (Boot 3.5.x declara 17–25).
 
 #### US-002 — Composición local con Docker Compose
@@ -97,6 +99,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 **Como** desarrollador, **quiero** `docker compose up` que levante la aplicación y PostgreSQL con espera healthy, **para** desarrollar sin instalar nada y con datos persistentes.
 
 - **Prioridad:** Alta · **Dependencias:** US-001 · **Estimación:** 5
+- **Estado:** **Hecho** el 2026-10-11. Los 5 criterios verificados con ejecución real.
 - **Criterios de aceptación**
   1. `docker compose up --build` deja aplicación y base de datos en estado `healthy` en menos de 90 s.
   2. Un volumen nombrado conserva los datos entre reinicios.
@@ -106,6 +109,17 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 - **Tareas técnicas:** `infra/local/docker-compose.yml`, `infra/local/docker-compose.test.yml`, `.env.example`, `scripts/dev-up.ps1`, `scripts/dev-down.ps1`, healthchecks (`pg_isready` y actuator).
 - **Pruebas requeridas:** job de CI que levanta, consulta `/actuator/health` y destruye; verificación manual documentada.
 - **Riesgos:** tags de imagen desalineados → se fijan versiones explícitas, nunca `latest`.
+- **Verificación ejecutada (2026-10-11)**
+  1. ✅ `up --build` → ambos `healthy` en **60,8 s** la primera vez (descargando dependencias) y **50,4 s** en caliente.
+  2. ✅ Volumen `postgres-data`: una fila escrita antes de `restart db` sigue ahí después.
+  3. ✅ `docker compose ps` muestra `5432/tcp` **sin** mapeo al host, y `localhost:5432` desde el host no responde. Sólo se publica la API en 8080.
+  4. ✅ `.env` ignorado por `.gitignore:14`; `.env.example` versionado con valores de mentira; ninguna credencial real en el repositorio.
+  5. ✅ `down -v` deja 0 contenedores y 0 volúmenes de este proyecto.
+- **Decisiones tomadas aquí**
+  - `.env` vive en `infra/local/`, no en la raíz: Compose busca el archivo en el directorio del compose, y en la raíz el comando del criterio 1 fallaría sin dar una razón evidente.
+  - La app usa la imagen `maven:3.10.0-eclipse-temurin-21` y su `mvn`, no `./mvnw`: el wrapper exige `unzip` para validar el SHA-256 y la imagen **no lo trae** (comprobado). El `mvn` de la imagen es 3.10.0, la versión que fija ADR-0010.
+  - Cachés de Maven y de compilación en volúmenes con nombre, para que el `target/` del host (Windows) no se mezcle con clases compiladas en Linux.
+  - El Dockerfile de producción es **US-070**; aquí no se adelanta.
 
 #### US-003 — Esquema inicial y Flyway
 
@@ -498,4 +512,7 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-11 | US-002 → **Hecho**. `docker compose up --build` deja ambos servicios `healthy` en 60,8 s (frío) y 50,4 s (caliente). PostgreSQL sin puerto publicado en el host. `.env` generado desde `.env.example` y protegido por `.gitignore`. Scripts `dev-up.ps1` y `dev-down.ps1`. |
+| 2026-10-11 | US-001 → **Hecho**. Spike de springdoc cerrado: 3.1.1 sobre Boot 4.1.1 compila y sirve `/v3/api-docs` en `local` y **404 sin perfil**. springdoc se apagaba por defecto en todos los entornos (incluido producción): corregido en `application.yml` + `application-local.yml`. |
+| 2026-10-11 | US-001 pasa a **En curso**: criterios 1–7 verificados con salida real. Corregido el mensaje del Enforcer, que mostraba `Versión detectada: 21` al fallar con JDK 17 (`${java.version}` resolvía a la propiedad del `pom.xml`, no al JDK). |
 | 2026-10-11 | Backlog creado. 44 historias, ≈253 puntos. Java 21 LTS fijado en [ADR-0010](../adr/0010-versiones-de-java-y-spring-boot.md) |

@@ -44,6 +44,7 @@
         <!-- ==================== Versiones propias ==================== -->
         <!-- Sólo lo que Spring Boot NO gestiona. -->
         <archunit.version>1.5.1</archunit.version>
+        <springdoc.version>3.1.1</springdoc.version>
 
         <!-- Construcción reproducible: misma entrada, mismo JAR. -->
         <project.build.outputTimestamp>2026-10-11T00:00:00Z</project.build.outputTimestamp>
@@ -135,6 +136,17 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Documentación OpenAPI 3 + Swagger UI, generados del código.
+             La versión es explícita porque el BOM de Spring Boot no gestiona springdoc.
+             Verificado el 2026-10-11: springdoc 3.1.1 se construye sobre Spring Boot 4.1.0,
+             compatible con el 4.1.1 del proyecto. El US-005 activará los endpoints por
+             perfil; aquí sólo se añade la dependencia para cerrar el spike de US-001. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
         <!--
           Dependencias que se añaden más adelante, y por qué no están aquí:
 
@@ -142,10 +154,6 @@
               Añadirlas ahora activaría la autoconfiguración de seguridad por defecto
               y bloquearía los endpoints, incluidos los de actuator, sin que todavía
               exista configuración de seguridad que lo resuelva intencionadamente.
-
-            - springdoc-openapi 3.x → US-005. Su matriz oficial declara compatibilidad
-              con Spring Boot 4.x pero sólo enumera la línea 4.0.x. Se añade tras
-              verificar en el spike de US-001, no antes. Ver spring-conventions.md §5.
 
             - software.amazon.awssdk:* → US-050 y US-060 (Sprints 6 y 7).
               Además de llegar tarde, el requisito RNF-05 pide que el perfil por
@@ -188,7 +196,7 @@
                                     <version>[21,)</version>
                                     <message>
                                         El proyecto exige Java 21 LTS (ADR-0010).
-                                        Versión detectada: ${java.version}.
+                                        JAVA_HOME detectado: ${java.home}.
                                         Instala Eclipse Temurin 21 y define JAVA_HOME.
                                     </message>
                                 </requireJavaVersion>
