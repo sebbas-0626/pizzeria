@@ -1,0 +1,98 @@
+name: Integración
+
+# Separate de `ci.yml` a propósito.
+#
+# Las pruebas de integración levantan PostgreSQL con Testcontainers: tardan, necesitan Docker y
+# consumen recursos. Si compartieran job con las unitarias, cada push tardaría minutos y la
+# señal tardía es la menos útil. Aquí se aíslan para que `ci.yml` dé una respuesta rápida y este
+# workflow dé la definitiva.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_run:
+    # También cuando `ci.yml` termine bien: es una segundaopinion sobre el mismo código, no
+    # sobre otro.
+    workflows: ["CI"]
+    types: [completed]
+
+concurrency:
+  group: integracion-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  integration:
+    name: Pruebas contra PostgreSQL real
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repositorio
+        uses: actions/checkout@v5
+
+      - name: JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      # En los runners de GitHub Docker viene de serie, que es lo que necesita Testcontainers.
+      # Se imprime la versión para que un fallo de Testcontainers en el futuro se pueda atribuir
+      # a un cambio de runner en lugar de sospechar del código.
+      - name: Versión de Docker
+        run: docker version
+
+      # `verify` es la fase completa: compila, pasa las unitarias, empaqueta y ejecuta las
+      # pruebas `*IT` con Failsafe. No se ejecuta `integration-test` suelto porque corren antes
+      # del empaquetado.
+      - name: Verify con integración
+        run: ./mvnw -B -ntp verify
+        working-directory: backend
+
+      - name: Resumen de las pruebas
+        if: always()
+        run: |
+          cd backend
+          echo "--- Unitarias ---"
+          grep -h "Tests run" target/surefire-reports/*.txt 2>/dev/null || echo "sin informe"
+          echo "--- Integración ---"
+          grep -h "Tests run" target/failsafe-reports/*.txt 2>/dev/null || echo "sin informe"
+
+  # ---------------------------------------------------------------------------------------
+  # Cobertura: el informe de JaCoCo, aunque las pruebas ya hayan fallado
+  # ---------------------------------------------------------------------------------------
+  cobertura:
+    name: Informe de cobertura
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      # No se vuelve a ejecutar la suite: `verify` deja el informe en target/site/jacoco. Este
+      # job sólo lo recoge y lo publica, que es lo que permite abrirlo desde la interfaz.
+      - name: Publicar el informe
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 7

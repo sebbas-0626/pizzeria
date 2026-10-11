@@ -1,0 +1,66 @@
+# Actualizaciones automáticas de dependencias.
+#
+# Por qué se limita a Maven, Docker y las acciones:
+#
+#   - Actualiza el PARCHE, no la línea de versión. Spring Boot 4.1 → 4.2 o Java 21 → 25 son
+#     decisiones que exigen una ADR nueva (ADR-0010). Dependabot abre la propuesta y una persona
+#     decide; no las aplica solo.
+#   - Maven: lo que gestiona el BOM no lleva versión en el pom, así que basta con subir el
+#     parent de Spring Boot para que todo lo demás suba con él, de forma coherente.
+#   - Docker: las imágenes de PostgreSQL y de Maven llevan tag explícito, nunca `latest`.
+#   - github-actions: los `uses:` están fijados a una major, así que un tag como v5 no se mueve
+#     solo.
+#
+# Se agrupa por ecosistema para que una actualización de bajo riesgo no se mezcle con una de
+# riesgo alto en la misma propuesta.
+
+version: 2
+
+updates:
+
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+    open-pull-requests-limit: 5
+    labels: [dependencia, java]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # El parent de Spring Boot manda sobre el BOM. Si se sube Spring Boot por separado de sus
+      # módulos, las versiones quedarían cruzadas.
+      spring-boot:
+        patterns: [org.springframework.boot*]
+      # Boot 4 movió la autoconfiguración de Flyway a su propio módulo: si el motor y el módulo
+      # no suben juntos, las migraciones dejan de ejecutarse y en silencio (US-003).
+      flyway:
+        patterns: [org.flywaydb*]
+      testcontainers:
+        patterns: [org.testcontainers*, com.github.docker-java*]
+      # Jackson 3 convive con jackson-annotations 2.x: subirlos por separado rompe el mapeo.
+      jackson:
+        patterns: [tools.jackson*, com.fasterxml.jackson*]
+
+  - package-ecosystem: docker
+    directory: /infra/local
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+    open-pull-requests-limit: 3
+    labels: [dependencia, infra]
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+    open-pull-requests-limit: 3
+    labels: [dependencia, ci]
+    commit-message:
+      prefix: "chore(ci)"

@@ -1,0 +1,138 @@
+name: CI
+
+# Motivos de cada decisión, para no deshacerlas sin leer:
+#
+#   - `pull_request` además de `push`: los forks no tienen acceso a los secretos ni disparan
+#     el push de su rama. Es la única forma de comprobar un PR que viene de fuera.
+#   - `concurrency` cancela la ejecución anterior del mismo ref. Sin esto, cinco pushes seguidos
+#     consumen cinco runners completos para comprobar el mismo commit cinco veces.
+#   - `permissions: contents: read` es el mínimo. Por defecto un workflow puede escribir en el
+#     repositorio; dejarlo sólo en lectura reduce el daño si algo se ejecuta por error.
+#   - El Enforcer ya falla con un JDK distinto de 21, pero se fija `java-version` igualmente:
+#     compilar con 25 y probar con 21 es exactamente el «funciona en mi máquina» que ADR-0010
+#     quiere evitar.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  # ---------------------------------------------------------------------------------------
+  # Verificación: compila, pruebas unitarias y empaqueta
+  # ---------------------------------------------------------------------------------------
+  verify:
+    name: Compilar y probar
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Repositorio
+        uses: actions/checkout@v5
+
+      - name: JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # El wrapper descarga Maven 3.10.0 y verifica su SHA-256. En Linux `unzip` viene de
+      # serie, pero en algunas imágenes minimal no: si faltara, el wrapper cambiaría la URL a
+      # .tar.gz y la validación fallaría aunque el hash fuese correcto. Instalar el paquete es
+      # la parte de la trampa que se perdió en US-002.
+      - name: unzip (el wrapper lo necesita para validar el SHA-256)
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Versiones effective
+        run: |
+          java -version
+          ./mvnw -v
+
+      - name: Verify
+        run: ./mvnw -B -ntp verify
+
+      - name: Subir el JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: pizzeria-backend-jar
+          path: backend/target/pizzeria-backend.jar
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Subir el informe de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------------------
+  # Secretos: falla si hay uno commiteado
+  # ---------------------------------------------------------------------------------------
+  secrets:
+    name: Escaneo de secretos
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repositorio
+        uses: actions/checkout@v5
+        with:
+          # Gitleaks necesita el historial completo para buscar secretos en commits ya
+          # mergeados, no sólo en el estado actual.
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # El action es de terceros y repositorio propio: sin token, la licencia de
+          # organizaciones exige una cuenta. Con token no hace falta cuenta.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---------------------------------------------------------------------------------------
+  # Docker Compose: el entorno local documentado tiene que seguir levantándose
+  # ---------------------------------------------------------------------------------------
+  compose:
+    name: Entorno local con Docker Compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repositorio
+        uses: actions/checkout@v5
+
+      - name: .env de pruebas
+        # Credenciales de mentira para el runner efímero. NUNCA un secreto real aquí: si el
+        # workflow usara un secreto, un fork podría leerlo al abrir un pull_request.
+        run: cp infra/local/.env.example infra/local/.env
+
+      - name: Levantar el entorno y comprobar la salud
+        run: |
+          docker compose -f infra/local/docker-compose.yml up --build -d --wait
+          echo "--- Estado ---"
+          docker compose -f infra/local/docker-compose.yml ps
+          echo "--- Salud de la API ---"
+          curl -fsS http://localhost:8080/actuator/health
+
+      - name: La documentacion se publica en local y NO fuera
+        run: |
+          # El criterio 1 de US-005, comprobado en CI y no sólo en local: en el perfil local
+          # el contrato se sirve, y /actuator/env no se expone nunca.
+          curl -fsS -o /dev/null http://localhost:8080/v3/api-docs
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/actuator/env)" = "404"
+
+      - name: Destruir el entorno
+        if: always()
+        run: docker compose -f infra/local/docker-compose.yml down -v --remove-orphans

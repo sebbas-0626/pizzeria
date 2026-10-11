@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,6 +44,8 @@ class OpenApiDeshabilitadoIT {
     private int puerto;
 
     private final HttpClient http = HttpClient.newHttpClient();
+
+    private final tools.jackson.databind.ObjectMapper json = new tools.jackson.databind.ObjectMapper();
 
     @Test
     @DisplayName("Sin perfil local, /v3/api-docs responde 404")
@@ -75,6 +78,36 @@ class OpenApiDeshabilitadoIT {
         // Si esto fallara, un 404 en /v3/api-docs podría deberse a que la aplicación no arrancó,
         // y la prueba del 404 pasaría por el motivo equivocado.
         assertThat(pedir("/actuator/health").statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("Sin perfil local, actuator/env NO esta expuesto")
+    void actuatorEnvNoEstaExpuesto() throws Exception {
+        // Último criterio de US-080. /actuator/env puede filtrar secretos aunque no haya usuario
+        // configurado, así que la lista de `management.endpoints.web.exposure.include` es
+        // deliberadamente corta: health, info y metrics.
+        HttpResponse<String> respuesta = pedir("/actuator/env");
+
+        assertThat(respuesta.statusCode()).isEqualTo(404);
+    }
+
+    @Test
+    @DisplayName("Solo se exponen los endpoints de actuator permitidos")
+    void soloSeExponenLosEndpointsPermitidos() throws Exception {
+        HttpResponse<String> respuesta = pedir("/actuator");
+        List<String> expuestos = json.readTree(respuesta.body())
+                .path("_links").properties().stream()
+                .map(entrada -> entrada.getKey())
+                .toList();
+
+        // No se comprueba una lista exacta: Spring Boot añade enlaces de hipermedia como
+        // `health-path` o `metrics-requiredMetricName`, que no son endpoints. Lo que importa es
+        // que estén los tres previstos y que no asome ninguno de los que filtran información.
+        assertThat(expuestos).contains("self", "health", "info", "metrics");
+        assertThat(expuestos)
+                .as("estos endpoints pueden filtrar secretos aunque no haya usuario configurado")
+                .doesNotContain("env", "configprops", "beans", "loggers", "heapdump", "threaddump",
+                        "mappings", "scheduledtasks", "conditions");
     }
 
     private HttpResponse<String> pedir(String ruta) throws Exception {
