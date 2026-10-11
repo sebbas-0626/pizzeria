@@ -12,11 +12,18 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_run:
-    # También cuando `ci.yml` termine bien: es una segundaopinion sobre el mismo código, no
-    # sobre otro.
-    workflows: ["CI"]
-    types: [completed]
+
+# SIN trigger `workflow_run`.
+#
+# Se añadió al principio y fue un error: este workflow ya se dispara con `push` y con
+# `pull_request`, así que `workflow_run` sólo lo duplicaba. Y como el grupo de `concurrency`
+# es el mismo, las ejecuciones duplicadas se cancelaban entre sí: en un push real se vieron
+# seis ejecuciones «cancelled» y la del propio `push` entre ellas. El resultado era correcto
+# porque una terminaba bien, pero se quemaban arranques de runner para nada y el panel de
+# Actions quedaba lleno de ruido que parece un fallo.
+#
+# Si alguna vez hace falta encadenar de verdad, el grupo de concurrency debe incluir el
+# evento, para que un workflow no cancele al otro.
 
 concurrency:
   group: integracion-${{ github.ref }}
