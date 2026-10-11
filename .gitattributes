@@ -25,6 +25,14 @@
 *.cmd text eol=crlf
 *.bat text eol=crlf
 
+# El wrapper de Maven tiene que ser EJECUTABLE en el clon.
+#
+# Windows no registra el bit de ejecución y su core.fileMode suele estar en false, así
+# que un mvnw creado aquí se versiona como 100644 y en Linux `./mvnw` falla con
+# «Permission denied». En Windows funciona igual: por eso el fallo sólo aparece en CI.
+# Esta línea obliga a que el bit viaje en el repositorio.
+backend/mvnw text eol=lf
+
 # Binarios: nunca se deben normalizar sus finales de línea. Convertirlos sería
 # corromper el archivo.
 *.jar binary
