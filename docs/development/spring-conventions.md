@@ -141,8 +141,9 @@ persistence.OrderJpaEntity      ← @Entity, tabla orders
 | Ubicación | `src/main/resources/db/migration/` |
 | Nomenclatura | `V<fecha>__<descripcion_en_ingles>.sql`, siempre ascendente |
 | **Inmutabilidad** | Una migración aplicada **no se edita jamás**. Se añade una nueva |
-| Recursos de Spring Boot 3+/4 | Flyway ya se autoconfigura: **no** añadir `flyway-core` a mano |
-| PostgreSQL | Soporte en módulo aparte: `flyway-database-postgresql` |
+| Recursos de Spring Boot 4 | Flyway **no** se autoconfigura sólo con `flyway-core`. Desde Spring Boot 4 la autoconfiguración vive en un módulo propio, **`spring-boot-flyway`**, que hay que declarar |
+| Dependencias de Flyway | `flyway-core` + `flyway-database-postgresql` + `spring-boot-flyway` |
+| Por qué | Con las dos primeras y sin la tercera, el build compila, la app arranca y **no se ejecuta ninguna migración**. `ddl-auto=validate` tampoco avisa, porque aún no hay entidades que validar. Fallo silencioso, descubierto el 2026-10-11 en US-003 |
 | Validación | `spring.flyway.clean-disabled=true` siempre |
 | Datos de prueba | **Nunca** en migraciones `V`. Van en el perfil de test o en scripts de `scripts/` |
 

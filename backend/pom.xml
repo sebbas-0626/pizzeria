@@ -81,6 +81,18 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
+        <!--
+          IMPORTANTE en Spring Boot 4: la autoconfiguración de Flyway se movió a un módulo
+          propio, spring-boot-flyway. Con flyway-core + flyway-database-postgresql a secas
+          el build compila, la aplicación arranca y NO se ejecuta ninguna migración: el
+          esquema nunca se crea y ddl-auto=validate no se queja porque todavía no hay
+          entidades que validar. Fallo silencioso. Por eso este módulo es obligatorio.
+          Ver spring-conventions.md §4.3.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-flyway</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
