@@ -64,7 +64,7 @@ jobs:
         run: ./mvnw -B -ntp verify
 
       - name: Subir el JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pizzeria-backend-jar
           path: backend/target/pizzeria-backend.jar
@@ -73,7 +73,7 @@ jobs:
 
       - name: Subir el informe de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-report
           path: backend/target/site/jacoco/
