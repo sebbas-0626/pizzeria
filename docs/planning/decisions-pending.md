@@ -25,6 +25,7 @@
 | D12 | Emisión y caducidad del JWT | US-021 | ⬜ Abierta | ⚙️ RS256, 15 minutos, sin refresh token |
 | D13 | Datos visibles en el historial de estados | US-032 | ⬜ Abierta | ⚙️ Historial completo en el detalle del pedido |
 | D14 | Autorización y presupuesto para AWS | US-072, US-081, US-082 | ⬜ Abierta | ⚙️ Sin despliegue real; historias marcadas como bloqueadas |
+| **D15** | **Dónde vive el estado del pago** | **US-003 (esquema)** | ⚙️ **Aplicada con el valor por defecto** (pendiente de ratificar) | Columnas `payment_status` y `payment_method` en `orders` |
 
 ---
 
@@ -192,6 +193,42 @@ pipeline y ADR sin despliegue real.
 - [ ] Alarma de coste configurada **antes** de crear el primer recurso
 - [ ] Rol de IAM de mínimo privilegio, sin claves estáticas en el repositorio
 - [ ] Checklist de destrucción documentado
+
+---
+
+### D15 · Dónde vive el estado del pago
+
+**Pregunta:** ¿el estado del pago (`UNPAID` / `PAID`) vive en una tabla `payments` o como columnas de
+`orders`?
+
+**Estado:** ⬜ Abierta. Detectada el **2026-10-11** al implementar US-003.
+
+**La contradicción.** Dos documentos del repositorio no coinciden:
+
+| Fuente | Dice | Prioridad |
+|---|---|---|
+| `requirements-v1.0.md` §7 — modelo de datos | **8 tablas**, y `payments` **no está entre ellas**. `cash_payments` sí, descrita como «cobro en efectivo» | **1 — fuente de verdad** |
+| `backlog.md` US-037, criterio 4 | *«`payments.status = PAID` y `orders.status = DELIVERED` en la misma transacción»* | 6 — planificación |
+| `sprint-04.md` US-037 | *«no existe ninguna fila en `cash_payments` para ese pedido»* | — — registro efímero |
+
+En ninguna parte de `requirements-v1.0.md` se describe una tabla `payments`. La referencia del backlog apunta
+a un identificador que el modelo de datos aprobado no contiene.
+
+**Valor por defecto aplicado:** ⚙️ el estado del pago se modela como **columnas de `orders`**
+(`payment_status`, `payment_method`), y `cash_payments` queda como el **registro del cobro efectivo**
+(`order_id`, `amount`, `received_by`, `paid_at`).
+
+**Por qué esta lectura:**
+
+1. `requirements-v1.0.md` es la fuente de verdad de mayor precedencia y fija **8 tablas**. Añadir una novena
+   para resolver una abreviatura del backlog sería alargar el modelo en contra de la fuente que manda.
+2. El sistema tiene **un solo método de pago** (RF-PA-01: `CASH`) y **un pago por pedido** (RF-PA-07). Un
+   estado de pago no tiene cardinalidad propia: es un atributo del pedido mientras no exista otro.
+3. `UNIQUE (order_id)` en `cash_payments` sigue teniendo todo el sentido: impide el doble cobro (RN-PG-07),
+   que es la garantía que de verdad importa y la que US-042 concurrentemente pone a prueba.
+
+**Consecuencia si más adelante se decide una tabla `payments`:** sería una migración `V2`, nunca una
+edición de `V1`, y habría que revisar US-037, US-038 y el contrato de API.
 
 ---
 

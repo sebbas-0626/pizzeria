@@ -57,7 +57,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 |---|---|---|---|---|---|---|
 | [US-001](#us-001--esqueleto-del-proyecto-y-verificación-del-stack) | Esqueleto del proyecto y verificación del stack | S1 | Crítica | — | 3 | Hecho |
 | [US-002](#us-002--composición-local-con-docker-compose) | Composición local con Docker Compose | S1 | Alta | US-001 | 5 | Hecho |
-| [US-003](#us-003--esquema-inicial-y-flyway) | Esquema inicial y Flyway | S1 | Crítica | US-001, US-002 | 5 | Pendiente |
+| [US-003](#us-003--esquema-inicial-y-flyway) | Esquema inicial y Flyway | S1 | Crítica | US-001, US-002 | 5 | Hecho |
 | [US-004](#us-004--estrategia-global-de-errores-y-validación) | Estrategia global de errores y validación | S1 | Alta | US-001 | 3 | Pendiente |
 | [US-005](#us-005--documentación-openapi) | Documentación OpenAPI | S1 | Media | US-004 | 3 | Pendiente |
 | [US-006](#us-006--pipeline-base-en-github-actions) | Pipeline base en GitHub Actions | S1 | Alta | US-001, US-003 | 5 | Pendiente |
@@ -134,7 +134,17 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   5. Un test de integración con Testcontainers aplica las migraciones y verifica el esquema.
 - **Tareas técnicas:** `V1__baseline_schema.sql`, política de migraciones en `db/migration/README.md`, `flyway-database-postgresql`.
 - **Pruebas requeridas:** integración con Testcontainers; aserciones sobre `information_schema`.
-- **Riesgos:** el `CHECK` de coherencia de `orders.total_amount` requiere un *trigger* porque PostgreSQL no admite subconsultas en `CHECK` → resolver en esta historia.
+- **Riesgos:** el `CHECK` de coherencia de `orders.total_amount` requiere un *trigger* porque PostgreSQL no admite subconsultas en `CHECK` → **resuelto** con un `CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED` que se ancla al commit.
+- **Estado:** **Hecho** el 2026-10-11. Verificación con salida real:
+  1. ✅ Las 8 tablas creadas, con sus FK, índices y restricciones `CHECK`. 9 claves foráneas, todas `RESTRICT`. 0 tipos `ENUM`.
+  2. ✅ Arranca sobre base vacía y `flyway:validate` limpio: `Successfully validated 1 migration` / `Schema "public" is up to date`.
+  3. ✅ `ddl-auto=validate` en `application.yml` y `application-test.yml`.
+  4. ✅ `V1` no se ha editado después de aplicarse. Las correcciones se hicieron **antes** del merge.
+  5. ✅ `SchemaMigrationIT`: 14 pruebas contra PostgreSQL real (Testcontainers), con aserciones sobre `information_schema` y sobre el comportamiento real de cada restricción.
+- **Tres hallazgos de esta historia** (detalle en `db/migration/README.md` y en `spring-conventions.md` §4.3)
+  - **`spring-boot-flyway` es obligatorio en Spring Boot 4.** Con `flyway-core` + `flyway-database-postgresql` a solas, el build compila, la app arranca y **no se ejecuta ninguna migración**. La regla de `spring-conventions.md` §4.3 era incorrecta y se ha corregido.
+  - **PostgreSQL rechaza una expresión dentro de `UNIQUE` de tabla.** El email único sin mayúsculas tiene que ser un `CREATE UNIQUE INDEX ... ON t (lower(email))`.
+  - **RN-IM-06 no lo puede cumplir la base de datos.** Al convertir a `NUMERIC(12,0)`, PostgreSQL redondea en silencio (`12500.50 → 12501`). La garantía vive en `Money` con `RoundingMode.UNNECESSARY`, en el dominio. Documentado con una prueba dedicada.
 
 #### US-004 — Estrategia global de errores y validación
 
@@ -512,6 +522,7 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-11 | US-003 → **Hecho**. Las 8 tablas migradas por Flyway y 14 pruebas de integración sobre PostgreSQL real. Tres hallazgos: `spring-boot-flyway` es obligatorio en Boot 4 (sin él ninguna migración se ejecuta, en silencio); PostgreSQL rechaza expresiones en `UNIQUE` de tabla; y RN-IM-06 no lo puede cumplir la base, porque `NUMERIC(12,0)` redondea en silencio. Registrada la ambigüedad **D15** sobre dónde vive el estado del pago. |
 | 2026-10-11 | US-002 → **Hecho**. `docker compose up --build` deja ambos servicios `healthy` en 60,8 s (frío) y 50,4 s (caliente). PostgreSQL sin puerto publicado en el host. `.env` generado desde `.env.example` y protegido por `.gitignore`. Scripts `dev-up.ps1` y `dev-down.ps1`. |
 | 2026-10-11 | US-001 → **Hecho**. Spike de springdoc cerrado: 3.1.1 sobre Boot 4.1.1 compila y sirve `/v3/api-docs` en `local` y **404 sin perfil**. springdoc se apagaba por defecto en todos los entornos (incluido producción): corregido en `application.yml` + `application-local.yml`. |
 | 2026-10-11 | US-001 pasa a **En curso**: criterios 1–7 verificados con salida real. Corregido el mensaje del Enforcer, que mostraba `Versión detectada: 21` al fallar con JDK 17 (`${java.version}` resolvía a la propiedad del `pom.xml`, no al JDK). |
