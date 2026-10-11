@@ -201,21 +201,48 @@ Formato único **RFC 9457** (`application/problem+json`) mediante `ProblemDetail
 - `code`: identificador estable en mayúsculas (`ORDERS_NOT_FOUND`).
 - `timestamp` y `traceId`.
 
+**El estado HTTP no lo decide la excepción, lo decide una tabla.** El dominio no sabe qué es un 404, así
+que `DomainException` transporta un `ErrorCode` (`common.domain`) y `common.web.GlobalExceptionHandler`
+lo traduce. Añadir un caso es añadir una fila a la tabla, no una rama en cada sitio.
+
 Mapeo por defecto en `common.web.GlobalExceptionHandler`:
 
-| Excepción | HTTP |
+| Excepción | HTTP | Código |
+|---|---|---|
+| `MethodArgumentNotValidException` | 400 | `REQUEST_VALIDATION_FAILED` + lista `errors` con campo y mensaje |
+| `ConstraintViolationException`, `HandlerMethodValidationException` | 400 | `REQUEST_VALIDATION_FAILED` |
+| `HttpMessageNotReadableException`, parámetro inválido | 400 | `MALFORMED_REQUEST` |
+| `NoResourceFoundException` | 404 | recurso inexistente |
+| Excepción de autenticación | 401 | **Pendiente de US-021** |
+| `AccessDeniedException` | 403 | **Pendiente de US-021** |
+| `DomainException` con código de `catalog_*` / `identity_*` / `orders_*` / `payments_*` | 404 / 409 / 422 | El que lleve la excepción |
+| Cualquier otra | 500 | `INTERNAL_ERROR`, mensaje genérico, sin detalles internos |
+
+> Los casos **401 y 403 no están mapeados todavía**: mapearlos exigiría importar Spring Security, y esa
+> dependencia no se añade hasta US-021 a propósito, porque su autoconfiguración bloquearía los
+> endpoints antes de que exista configuración de seguridad intencionada.
+
+**Regla dura:** el mensaje de error nunca contiene datos de otro usuario, contraseñas, tokens, cabeceras
+de autorización ni SQL. El detalle de un 500 es **siempre** genérico, porque su texto puede contener
+cualquier cosa, incluido un fragmento de consulta.
+
+### 5.4 Correlación de peticiones
+
+| Aspecto | Configuración |
 |---|---|
-| `MethodArgumentNotValidException`, `ConstraintViolationException` | 400 |
-| Excepción de autenticación | 401 |
-| `AccessDeniedException` | 403 |
-| Recurso inexistente **o de otro cliente** | 404 |
-| `EmailAlreadyRegisteredException`, `InvalidOrderTransitionException`, `PaymentAlreadyRegisteredException` | 409 |
-| Regla de negocio violada (variante no disponible, pedido vacío, importe distinto) | 422 |
-| Cualquier otra | 500, mensaje genérico, sin detalles internos |
+| Identificador | UUID por petición, en el MDC bajo `traceId` |
+| Filtro | `common.web.TraceIdFilter` (`OncePerRequestFilter`), orden `HIGHEST_PRECEDENCE` |
+| Viaja en | Log, cabecera de respuesta `X-Trace-Id` y cuerpo del error `traceId` |
+| Cliente puede enviarlo | Sí, por `X-Trace-Id`, **sólo si tiene forma de UUID**. Si no, se genera otro |
+| Limpieza | El MDC se limpia en un `finally`: si no, el hilo del contenedor heredaría el identificador de la petición anterior |
 
-**Regla dura:** el mensaje de error nunca contiene datos de otro usuario, contraseñas, tokens ni SQL.
+**Por qué se valida el identificador que envía el cliente.** Aceptarlo sin comprobarlo permitiría
+inyectar texto arbitrario en los logs, y los logs son justo lo que se usa para diagnosticar. Se acepta
+sólo lo que parses como UUID.
 
-### 5.4 Seguridad
+> Pendiente en **US-043**: logs en JSON estructurado y redacción de `password`, `token` y `authorization`.
+
+### 5.5 Seguridad
 
 | Aspecto | Configuración |
 |---|---|

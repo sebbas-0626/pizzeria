@@ -58,7 +58,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 | [US-001](#us-001--esqueleto-del-proyecto-y-verificación-del-stack) | Esqueleto del proyecto y verificación del stack | S1 | Crítica | — | 3 | Hecho |
 | [US-002](#us-002--composición-local-con-docker-compose) | Composición local con Docker Compose | S1 | Alta | US-001 | 5 | Hecho |
 | [US-003](#us-003--esquema-inicial-y-flyway) | Esquema inicial y Flyway | S1 | Crítica | US-001, US-002 | 5 | Hecho |
-| [US-004](#us-004--estrategia-global-de-errores-y-validación) | Estrategia global de errores y validación | S1 | Alta | US-001 | 3 | Pendiente |
+| [US-004](#us-004--estrategia-global-de-errores-y-validación) | Estrategia global de errores y validación | S1 | Alta | US-001 | 3 | Hecho |
 | [US-005](#us-005--documentación-openapi) | Documentación OpenAPI | S1 | Media | US-004 | 3 | Pendiente |
 | [US-006](#us-006--pipeline-base-en-github-actions) | Pipeline base en GitHub Actions | S1 | Alta | US-001, US-003 | 5 | Pendiente |
 
@@ -158,6 +158,17 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   4. Existe un test por cada tipo de excepción mapeada.
 - **Tareas técnicas:** `common/domain/DomainException`, `common/web/GlobalExceptionHandler`, catálogo de códigos.
 - **Pruebas requeridas:** `@WebMvcTest` con controlador de pruebas y 6–8 escenarios.
+- **Estado:** **Hecho** el 2026-10-11. Verificación con salida real:
+  1. ✅ Todo error sale como `application/problem+json` con `code` estable, más `timestamp` y `traceId`.
+  2. ✅ `MethodArgumentNotValidException` → 400 con lista `errors` de campo y mensaje. El test exige los nombres de campo concretos, no sólo el código.
+  3. ✅ Ningún mensaje incluye traza. El test del 500 comprueba que el cuerpo **no** contiene el mensaje original, ni el nombre de la excepción, ni `java.lang`.
+  4. ✅ 9 escenarios en `GlobalExceptionHandlerTest`, uno por tipo de excepción mapeada y otro por cada código del catálogo.
+- **Decisiones tomadas aquí**
+  - **El estado HTTP lo decide una tabla, no la excepción.** El dominio no sabe qué es un 404, así que `DomainException` transporta un `ErrorCode` y `GlobalExceptionHandler` lo traduce. Añadir un caso es añadir una fila.
+  - **401 y 403 NO están mapeados.** Mapearlos exigiría importar Spring Security, y esa dependencia no se añade hasta US-021 a propósito. Documentado en `spring-conventions.md` §5.3 para que no parezca un olvido.
+  - **Las excepciones concretas las crea cada módulo en su historia.** `OrderNotFoundException` viene con US-032, no aquí. En `src/test` hay una `ExcepcionDePrueba` que demuestra que el manejador traduce *cualquier* `DomainException`.
+  - **El controlador de pruebas está en `src/test`**, no en `src/main`: no se despliega. No había forma de probar el `@RestControllerAdvice` sin una ruta que lance cada excepción, y aún no existe ningún endpoint real (US-010 va después).
+- **Hallazgo**: `@WebMvcTest` y `ObjectMapper` han cambiado de sitio en Spring Boot 4. `@WebMvcTest` pasó a `org.springframework.boot.webmvc.test.autoconfigure` y necesita su propio starter, `spring-boot-starter-webmvc-test`; y el mapper es `tools.jackson.databind.ObjectMapper` (Jackson 3), no `com.fasterxml.jackson.databind`.
 
 #### US-005 — Documentación OpenAPI
 
@@ -522,6 +533,7 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-11 | US-004 → **Hecho**. Errores en `problem+json` con `code` estable, `timestamp` y `traceId`, y 9 escenarios de prueba. El estado HTTP lo decide una tabla, no la excepción. `@WebMvcTest` y `ObjectMapper` han cambiado de paquete en Spring Boot 4. |
 | 2026-10-11 | US-003 → **Hecho**. Las 8 tablas migradas por Flyway y 14 pruebas de integración sobre PostgreSQL real. Tres hallazgos: `spring-boot-flyway` es obligatorio en Boot 4 (sin él ninguna migración se ejecuta, en silencio); PostgreSQL rechaza expresiones en `UNIQUE` de tabla; y RN-IM-06 no lo puede cumplir la base, porque `NUMERIC(12,0)` redondea en silencio. Registrada la ambigüedad **D15** sobre dónde vive el estado del pago. |
 | 2026-10-11 | US-002 → **Hecho**. `docker compose up --build` deja ambos servicios `healthy` en 60,8 s (frío) y 50,4 s (caliente). PostgreSQL sin puerto publicado en el host. `.env` generado desde `.env.example` y protegido por `.gitignore`. Scripts `dev-up.ps1` y `dev-down.ps1`. |
 | 2026-10-11 | US-001 → **Hecho**. Spike de springdoc cerrado: 3.1.1 sobre Boot 4.1.1 compila y sirve `/v3/api-docs` en `local` y **404 sin perfil**. springdoc se apagaba por defecto en todos los entornos (incluido producción): corregido en `application.yml` + `application-local.yml`. |
