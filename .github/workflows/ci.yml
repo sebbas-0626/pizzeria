@@ -39,10 +39,10 @@ jobs:
 
     steps:
       - name: Repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -64,7 +64,7 @@ jobs:
         run: ./mvnw -B -ntp verify
 
       - name: Subir el JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pizzeria-backend-jar
           path: backend/target/pizzeria-backend.jar
@@ -73,7 +73,7 @@ jobs:
 
       - name: Subir el informe de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-report
           path: backend/target/site/jacoco/
@@ -89,14 +89,14 @@ jobs:
 
     steps:
       - name: Repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           # Gitleaks necesita el historial completo para buscar secretos en commits ya
           # mergeados, no sólo en el estado actual.
           fetch-depth: 0
 
       - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           # El action es de terceros y repositorio propio: sin token, la licencia de
           # organizaciones exige una cuenta. Con token no hace falta cuenta.
@@ -111,7 +111,7 @@ jobs:
 
     steps:
       - name: Repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: .env de pruebas
         # Credenciales de mentira para el runner efímero. NUNCA un secreto real aquí: si el
