@@ -61,6 +61,30 @@ Para parar:
 ./scripts/dev-down.ps1 -Volumen   # destruye también los datos
 ```
 
+### Docker sin los scripts
+
+Los scripts sólo empaquetan esto, con la ventaja de crear el `.env` si falta:
+
+```powershell
+Copy-Item infra/local/.env.example infra/local/.env   # sólo si no existe
+docker compose -f infra/local/docker-compose.yml up --build -d --wait
+docker compose -f infra/local/docker-compose.yml ps
+docker compose -f infra/local/docker-compose.yml down            # conserva los datos
+docker compose -f infra/local/docker-compose.yml down -v         # destruye también los datos
+```
+
+Para usar la imagen de Maven suelta, **siempre con comando**:
+
+```powershell
+docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.10.0-eclipse-temurin-21 mvn -B -ntp verify
+```
+
+> **No pulses «Run» sobre `maven:3.10.0-eclipse-temurin-21` en Docker Desktop.** Su `CMD` por defecto es
+> `mvn` sin ningún objetivo, y eso falla con `NoGoalSpecifiedException`. No es un fallo del proyecto: es
+> `mvn` al que nadie le dijo qué construir. Los nombres `post-site` y `site-deploy` que salen en el
+> mensaje no son goals que se estén invocando, son la lista de fases que Maven imprime como ayuda.
+> El contenedor que sobra se quita con `docker container prune`.
+
 ### Sin Docker
 
 ```powershell
@@ -81,6 +105,8 @@ $env:POSTGRES_DB='pizzeria'; $env:POSTGRES_USER='pizzeria_dev'; $env:POSTGRES_PA
 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` | Arranca en local |
 | `./scripts/dev-up.ps1` | Levanta el entorno con Docker Compose |
 | `./scripts/dev-down.ps1` | Lo para |
+| `docker compose -f infra/local/docker-compose.yml up --build -d --wait` | Lo mismo que `dev-up.ps1`, sin el script |
+| `docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.10.0-eclipse-temurin-21 mvn -B -ntp verify` | `verify` dentro de la imagen de Maven, sin Compose |
 
 ---
 
