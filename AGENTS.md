@@ -3,8 +3,8 @@
 > Este archivo es la **fuente operativa** del repositorio. Cualquier persona o agente de IA que trabaje aquí debe leerlo antes de tocar código.
 
 - **Proyecto:** backend de una pizzería (una sede, pedidos para recogida, pago en efectivo)
-- **Arquitectura:** monolito modular con arquitectura hexagonal por módulo
-- **Estado actual:** fase S0 (requisitos y diseño). **No hay código de aplicación todavía.**
+- **Arquitectura:** monolito con arquitectura hexagonal por capas ([ADR-0004](docs/adr/0004-estructura-de-paquetes-por-capas.md))
+- **Estado actual:** fase S1 (fundamentos). La base y el contrato HTTP están; **todavía no hay código de negocio.**
 
 ---
 
@@ -51,28 +51,45 @@ Reglas dura:
 
 ### 3.1 Estructura
 
-Paquete por módulo, con las capas **dentro** del módulo:
+Por **capas globales**, con la dirección de dependencias visible en el nombre del paquete ([ADR-0004](docs/adr/0004-estructura-de-paquetes-por-capas.md)):
 
 ```
-com.pizzeria.<modulo>.{domain, application, adapters.in.web, adapters.out.persistence, config}
-com.pizzeria.common.{domain, web}
+infrastructure ──► application ──► domain
+  (conoce a todos)   (orquesta)     (no conoce a nadie)
+shared  (capa transversal: traduce, registra, correlaciona)
 ```
 
-Módulos: `catalog`, `identity`, `orders`, `payments`, `common`.
+```
+com.pizzeria.{domain, application, infrastructure, shared}
+```
+
+Árbol completo y normativo en [ADR-0004](docs/adr/0004-estructura-de-paquetes-por-capas.md) §3. **Sólo esos cuatro paquetes de primer nivel**: un quinto es un fallo de build (`ArchitectureRulesTest.noHayPaquetesHuerfanos`).
+
+| Paquete | Contenido |
+|---|---|
+| `domain.model` · `domain.model.vo` | `Pedido`, `LineaPedido`, `Cliente`, `Producto` y sus objetos de valor (`Email`, `Telefono`, `Precio`) |
+| `domain.exception` | `DomainException`, `ErrorCode` y las excepciones concretas del negocio |
+| `domain.port.in` · `domain.port.out` | Puertos ([ADR-0005](docs/adr/0005-los-puertos-se-declaran-en-el-dominio.md)) |
+| `application.usecase` · `application.service` · `application.dto` | Interfaces de casos de uso, sus implementaciones y los DTOs |
+| `infrastructure.adapter.in.web` | Controladores, filtros y DTOs de transporte |
+| `infrastructure.adapter.out.persistence` · `.storage` · `.messaging` | Adaptadores JPA con `entity/`, `mapper/`, `repository/`; adaptadores de S3 y SQS |
+| `infrastructure.config` | `SecurityConfig`, `JwtConfig`, `CorsConfig`, `OpenApiConfig`, `ClockConfig`, `BeanConfig` |
+| `shared.security` · `shared.exception` · `shared.util` | `JwtService`, `JwtAuthenticationFilter`, `UserDetailsServiceImpl`, `GlobalExceptionHandler`, `Mapper` |
 
 ### 3.2 Reglas de dependencia (obligatorias, se verifican con ArchUnit)
 
 | Capa | Puede importar | **Prohibido** importar |
 |---|---|---|
 | `domain` | `java.*` y nada más | Spring, Jakarta, JPA, Jackson, SDK AWS, lombok |
-| `application` | `domain` | Spring Web, Spring Data, Jackson, SDK AWS |
-| `adapters.in.web` | `application`, Spring Web/Security/Jackson | `adapters.out.*`, entidades JPA |
-| `adapters.out.persistence` | `application.port.out`, `domain`, Spring Data | `adapters.in.*` |
-| `adapters.out.storage` / `messaging` | `application.port.out`, SDK AWS v2 | `adapters.in.*`, `domain`, JPA |
+| `application` | `domain`, `application` | `infrastructure`, `shared`, Spring Web, Spring Data, Jackson, SDK AWS |
+| `infrastructure.adapter.in.web` | `application`, Spring Web/Security/Jackson | `infrastructure.adapter.out.*`, entidades JPA |
+| `infrastructure.adapter.out.persistence` | `domain.port.out`, `domain.model`, Spring Data | `infrastructure.adapter.in.*`, `application` |
+| `infrastructure.adapter.out.storage` / `messaging` | `domain.port.out`, SDK AWS v2 | `infrastructure.adapter.in.*`, `domain.model`, `domain.exception`, JPA |
+| `shared` | `domain.exception`, `shared`, `infrastructure` | `application`, `domain.model`, `domain.port`, `infrastructure.adapter.out` |
 
 - El **SDK de AWS no aparece nunca** en `domain` ni en `application`.
 - Una entidad JPA **nunca** es el modelo de dominio ([ADR-0003](docs/adr/0003-dominio-separado-de-jpa.md)).
-- Los repositorios son **puertos de salida** definidos en `application.port.out` ([ADR-0005](docs/adr/0005-repositorios-como-puertos-de-salida.md)).
+- Los repositorios son **puertos de salida** definidos en `domain.port.out` ([ADR-0005](docs/adr/0005-los-puertos-se-declaran-en-el-dominio.md)).
 
 ### 3.3 Abstracciones
 
@@ -83,6 +100,8 @@ Módulos: `catalog`, `identity`, `orders`, `payments`, `common`.
 3. ¿Aísla el dominio de una decisión que cambia (persistencia, infraestructura)?
 
 Si las tres son "no", no se abstrae. En este proyecto **no** existen: CQRS, strategy de pagos, Specification, `AbstractAggregateRoot`, outbox (sólo a partir de S7).
+
+**Excepción declarada:** la interfaz de caso de uso (`application.usecase`) separada de su implementación (`application.service`). Responde "sí" a la segunda y a la tercera — cruza la frontera HTTP y aísla los casos de uso de Spring — pero tiene una sola implementación. Se mantiene por [ADR-0004](docs/adr/0004-estructura-de-paquetes-por-capas.md), no por la regla anterior, y **no se extiende a ningún otro tipo**.
 
 ---
 
