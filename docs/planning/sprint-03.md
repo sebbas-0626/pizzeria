@@ -5,6 +5,10 @@
 > **Historias:** US-030 (dominio + aplicación + persistencia), US-038 (parcial)
 > **Puntos:** 8 de los 13 de US-030 (el resto se entrega en el Sprint 04)
 > **Documento efímero:** al terminar, lo relevante pasa al backlog y a la documentación de arquitectura.
+>
+> **Estructura de paquetes: capas globales**, según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md).
+> Este documento se planificó con la estructura por **módulo** (`orders/domain/…`, `orders/application/port/out/…`)
+> y se corrigió el 2026-10-17: ya no existen paquetes `orders/`, y los puertos viven en `domain/port/out`.
 
 ---
 
@@ -91,29 +95,31 @@ se deriva de ella, no al contrario.
 
 ### 4.1 Dominio
 
-- [ ] `common/domain/Money.java`, `PageRequest.java`, `PageResponse.java`
-- [ ] `orders/domain/Order.java` (agregado raíz)
-- [ ] `orders/domain/OrderItem.java` (con la foto histórica)
-- [ ] `orders/domain/OrderStatus.java` (tabla de transiciones)
-- [ ] `orders/domain/Quantity.java`, `OrderNumber.java`, `FulfillmentType.java`
-- [ ] `orders/domain/exception/` — `OrderNotFoundException`, `InvalidOrderTransitionException`, `EmptyOrderException`, `TooManyItemsException`
+- [ ] `domain/model/vo/Money.java` — objeto de valor del dinero (COP, escala 0, `RoundingMode.UNNECESSARY`); implementa RN-IM-06
+- [ ] `domain/model/Order.java` (agregado raíz)
+- [ ] `domain/model/OrderItem.java` (con la foto histórica)
+- [ ] `domain/model/OrderStatus.java` (tabla de transiciones)
+- [ ] `domain/model/Quantity.java`, `OrderNumber.java`, `FulfillmentType.java`
+- [ ] `domain/exception/` — `OrderNotFoundException`, `InvalidOrderTransitionException`, `EmptyOrderException`, `TooManyItemsException`
 - [ ] `Order.reconstitute(...)` para reconstruir desde persistencia
 
 ### 4.2 Aplicación
 
-- [ ] `orders/application/port/out/OrderRepository.java`
-- [ ] `orders/application/port/out/PricingCatalog.java` — **puerto** que devuelve precio y nombre del servidor
-- [ ] `PlaceOrderUseCase` con `@Transactional`
-- [ ] Comando `PlaceOrderCommand` (sólo `variantId` + `quantity`)
+- [ ] `domain/port/out/OrderRepositoryPort.java`
+- [ ] `domain/port/out/PricingCatalogPort.java` — **puerto** que devuelve precio y nombre del servidor
+- [ ] `application/usecase/PlaceOrderUseCase.java` + `application/service/PlaceOrderService.java` (`@Transactional`)
+- [ ] Comando `PlaceOrderCommand` en `application/dto` (sólo `variantId` + `quantity`)
 - [ ] Fusión de líneas duplicadas antes de persistir
 
 ### 4.3 Persistencia
 
-- [ ] `OrderJpaEntity`, `OrderItemJpaEntity`, `OrderStatusHistoryJpaEntity`
-- [ ] Repositorios Spring Data (internos al adaptador)
-- [ ] `OrderPersistenceAdapter` que implementa el puerto
-- [ ] `OrderPersistenceMapper` y `OrderItemMapper` (manuales)
-- [ ] `pricing/CatalogPricingAdapter` que implementa `PricingCatalog`
+- [ ] `infrastructure/adapter/out/persistence/entity/` — `OrderJpaEntity`, `OrderItemJpaEntity`, `OrderStatusHistoryJpaEntity`
+- [ ] Repositorios Spring Data en `…/persistence/repository/` (internos al adaptador)
+- [ ] `OrderPersistenceAdapter` en `…/persistence/` que implementa `OrderRepositoryPort`
+- [ ] `OrderPersistenceMapper` y `OrderItemMapper` en `…/persistence/mapper/` (manuales)
+- [ ] `CatalogPricingAdapter` en `…/persistence/` que implementa `PricingCatalogPort`
+
+> `PageRequest` y `PageResponse` **no se crean aquí**: llegan de S2, en `application/dto`.
 
 ### 4.4 Persistencia de una transición
 
@@ -151,7 +157,7 @@ se deriva de ella, no al contrario.
 | `OrderTest` | Unitario puro | Todos los invariantes y todas las transiciones, incluidas las ilegales |
 | `MoneyTest` | Unitario puro | Escala, redondeo, comparación con `compareTo`, moneda distinta |
 | `QuantityTest` | Unitario puro | Límites 1 y 20, y los valores fuera |
-| `PlaceOrderUseCaseTest` | Unitario con dobles | Variante no disponible, vacío, duplicados, precios falsos |
+| `PlaceOrderServiceTest` | Unitario con dobles | Variante no disponible, vacío, duplicados, precios falsos |
 | `OrderPersistenceAdapterIT` | Integración con Testcontainers | Persistencia real, tipos monetarios exactos, historial |
 | `CatalogPricingAdapterIT` | Integración | Filtra por `active` y `available` |
 | `ArchitectureRulesTest` | ArchUnit | `domain` sigue sin Spring ni JPA |
@@ -191,7 +197,7 @@ antes de escribir los tests.
 | **Depende de** | Sprint 02 (catálogo y precios disponibles) |
 | **Bloquea a** | Sprint 04 (los endpoints de pedidos) |
 | **Riesgo** | Relajarse en los redondeos: `Money` debe concentrarlos todos, no cada línea |
-| **Riesgo** | Filtrar precio «si viene» desde el cliente. Nunca: el puerto `PricingCatalog` es la única fuente |
+| **Riesgo** | Filtrar precio «si viene» desde el cliente. Nunca: el puerto `PricingCatalogPort` es la única fuente |
 | **Riesgo** | Reconstruir el agregado desde la entidad JPA y saltarse invariantes → `reconstitute` documentado y testeado |
 | **Decisión abierta** | ⚙️ D5 (límites) y ⚙️ D6/D7 (variante desactivada y cambio de precio) afectan a los invariantes I-03, I-04 y al comportamiento del caso de uso |
 
@@ -201,4 +207,5 @@ antes de escribir los tests.
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
+| 2026-10-17 | — | — | Rutas de tareas corregidas a capas globales ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)): `orders/domain/…` → `domain/model/…`, `orders/application/port/out/…` → `domain/port/out/…`, y los puertos pasan a nombre `…Port`. Sin historia empezada. |
 | — | — | — | Sprint no iniciado |

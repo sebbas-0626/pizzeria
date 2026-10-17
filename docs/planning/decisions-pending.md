@@ -1,9 +1,14 @@
-# Decisiones pendientes de aprobación
+# Decisiones de negocio — registro de resolución
 
-> **Fuente de verdad de las preguntas abiertas.** Ninguna implementación que dependa de una de estas
-> decisiones se ejecuta sin respuesta. Si una decisión no tiene respuesta cuando toque implementarla,
-> se aplica el **valor por defecto** marcado con ⚙️ y se anota aquí el supuesto asumido.
-> Última actualización: **2026-10-11**
+> **Fuente de verdad de las preguntas abiertas y de cómo se cerraron.** Ninguna implementación que dependa de
+> una decisión abierta se ejecuta sin respuesta. Si una decisión no tiene respuesta cuando toque
+> implementarla, se aplica el **valor por defecto** y se anota aquí el supuesto asumido.
+> Última actualización: **2026-10-17**
+>
+> **Estado: 15 de 15 resueltas.** El 2026-10-17 el responsable **aprobó `requirements-v1.0.md`** y ratificó
+> con sus valores por defecto las 15 decisiones. El archivo conserva su nombre para no romper los enlaces
+> existentes, pero ya no contiene ninguna decisión pendiente: si aparece una nueva, se añade aquí con estado
+> ⬜ Abierta y se propaga a `requirements-v1.1.md`.
 
 ---
 
@@ -12,20 +17,37 @@
 | ID | Decisión | Bloquea | Estado | Por defecto |
 |---|---|---|---|---|
 | D1 | Moneda del negocio | US-003 (esquema) | ✅ **Resuelta 2026-10-11** | **COP, sin decimales** |
-| D2 | Reglas de cancelación del administrador | US-036 | ⬜ Abierta | ⚙️ Admin cancela `PENDING` y `CONFIRMED`; motivo obligatorio en `CONFIRMED` |
-| D3 | Cancelación repetida | US-033 | ⬜ Abierta | ⚙️ `409 CONFLICT` (no idempotente) |
-| D4 | Acceso a un pedido ajeno | US-022, US-032, US-033 | ⬜ Abierta | ⚙️ `404` (no revela existencia) |
-| D5 | Límites de cantidad y líneas | US-030 | ⬜ Abierta | ⚙️ 1–20 unidades por línea, 10 líneas por pedido |
-| D6 | Variante desactivada con pedido abierto | US-030, US-012 | ⬜ Abierta | ⚙️ No bloquea; manda el snapshot histórico |
-| D7 | Cambio de precio con pedido abierto | US-012, US-030 | ⬜ Abierta | ⚙️ Se cobra el precio del snapshot |
-| D8 | Caducidad de pedidos `PENDING` | Fuera del MVP | ⬜ Abierta | ⚙️ Sin caducidad automática; documentado como deuda |
-| D9 | Importe recibido en la recogida | US-037 | ⬜ Abierta | ⚙️ Debe coincidir con el total; si no, 422 |
-| D10 | Ficha de cliente en el registro | US-020 | ⬜ Abierta | ⚙️ Email + nombre + contraseña (≥10). Rol forzado a `CUSTOMER` |
-| D11 | El registro devuelve token | US-020 | ⬜ Abierta | ⚙️ 201 con el recurso del cliente, sin token (hay que hacer login) |
-| D12 | Emisión y caducidad del JWT | US-021 | ⬜ Abierta | ⚙️ RS256, 15 minutos, sin refresh token |
-| D13 | Datos visibles en el historial de estados | US-032 | ⬜ Abierta | ⚙️ Historial completo en el detalle del pedido |
-| D14 | Autorización y presupuesto para AWS | US-072, US-081, US-082 | ⬜ Abierta | ⚙️ Sin despliegue real; historias marcadas como bloqueadas |
-| **D15** | **Dónde vive el estado del pago** | **US-003 (esquema)** | ⚙️ **Aplicada con el valor por defecto** (pendiente de ratificar) | Columnas `payment_status` y `payment_method` en `orders` |
+| D2 | Reglas de cancelación del administrador | US-036 | ✅ **Resuelta 2026-10-17** | ⚙️ Admin cancela `PENDING` y `CONFIRMED`; motivo obligatorio en `CONFIRMED` |
+| D3 | Cancelación repetida | US-033 | ✅ **Resuelta 2026-10-17** | ⚙️ `409 CONFLICT` (no idempotente) |
+| D4 | Acceso a un pedido ajeno | US-022, US-032, US-033 | ✅ **Resuelta 2026-10-17** | ⚙️ `404` (no revela existencia) |
+| D5 | Límites de cantidad y líneas | US-030 | ✅ **Resuelta 2026-10-17** | ⚙️ 1–20 unidades por línea, 10 líneas por pedido |
+| D6 | Variante desactivada con pedido abierto | US-030, US-012 | ✅ **Resuelta 2026-10-17** | ⚙️ No bloquea; manda el snapshot histórico |
+| D7 | Cambio de precio con pedido abierto | US-012, US-030 | ✅ **Resuelta 2026-10-17** | ⚙️ Se cobra el precio del snapshot |
+| D8 | Caducidad de pedidos `PENDING` | Fuera del MVP | ✅ **Resuelta 2026-10-17** | ⚙️ Sin caducidad automática; documentado como deuda |
+| D9 | Importe recibido en la recogida | US-037 | ✅ **Resuelta 2026-10-17** | ⚙️ Debe coincidir con el total; si no, 422 |
+| D10 | Ficha de cliente en el registro | US-020 | ✅ **Resuelta 2026-10-17** | ⚙️ Email + nombre + contraseña (≥10). Rol forzado a `CUSTOMER` |
+| D11 | El registro devuelve token | US-020 | ✅ **Resuelta 2026-10-17** | ⚙️ 201 con el recurso del cliente, sin token (hay que hacer login) |
+| D12 | Emisión y caducidad del JWT | US-021 | ✅ **Resuelta 2026-10-17** | ⚙️ RS256, 15 minutos, sin refresh token |
+| D13 | Datos visibles en el historial de estados | US-032 | ✅ **Resuelta 2026-10-17** | ⚙️ Historial completo en el detalle del pedido |
+| D14 | Autorización y presupuesto para AWS | US-072, US-081, US-082 | ✅ **Resuelta 2026-10-17** | ⚙️ Sin despliegue real; historias marcadas como bloqueadas |
+| **D15** | **Dónde vive el estado del pago** | **US-003 (esquema)** | ✅ **Resuelta 2026-10-17** | Columnas `payment_status` y `payment_method` en `orders` |
+
+### Qué bloqueaba a cada historia mientras estaban abiertas
+
+> Se conserva como registro. **Hoy ninguna decisión bloquea ninguna historia pendiente.**
+
+| Historia | Decisiones que la bloqueaban | Estado desde 2026-10-17 |
+|---|---|---|
+| US-010 · Consulta pública del catálogo | **Ninguna.** El modelo (`pizzas`, `pizza_variants`) y las dos rutas públicas ya estaban fijados en `requirements-v1.0.md` §7 y §8, y ninguna regla las tocaba | Desbloqueada |
+| US-011 · Alta y edición de pizzas | **Ninguna.** Sólo necesitaba la regla de unicidad de nombre, que no estaba marcada | Desbloqueada |
+| US-012 · Alta y edición de variantes | D6, D7 | Desbloqueada |
+| US-013 · Baja lógica del catálogo | **Ninguna** | Desbloqueada |
+| US-020…US-023 · Identidad | D10, D11, D12 | Desbloqueadas |
+| US-030…US-038 · Pedidos y pagos | D2, D3, D4, D5, D6, D9, D13 | Desbloqueados |
+| US-072, US-081, US-082 · AWS | D14 | **Siguen bloqueadas**, y no por ambigüedad: D14 establece que **no se crea ningún recurso real sin autorización escrita**. Es una restricción permanente, no una pregunta abierta |
+
+> La distinción importa: **D14 no es una ambigüedad pendiente de resolver, es una prohibición ratificada.**
+> Hasta que el responsable autorice por escrito, US-072, US-081 y US-082 no se ejecutan.
 
 ---
 
@@ -180,10 +202,11 @@ un ADR para ocultarlo al cliente.
 
 **Pregunta:** ¿Existe una cuenta preparada y un límite de gasto? ¿Se autoriza crear recursos?
 
-**Estado:** ⬜ Abierta. **US-072, US-081 y US-082 permanecen bloqueadas** hasta que exista una
-autorización escrita con presupuesto y alarma de coste.
+**Estado:** ✅ **Resuelta 2026-10-17** — la decisión está tomada; lo que sigue pendiente es **ejecutarla**.
+**US-072, US-081 y US-082 permanecen bloqueadas** hasta que exista una autorización escrita con presupuesto
+y alarma de coste. Esto **no es una ambigüedad pendiente de resolver**: es una prohibición ratificada.
 
-**Valor por defecto:** ⚙️ No se crea ningún recurso de AWS. Los sprints 8 y 9 entregan Dockerfile,
+**Decisión ratificada:** ⚙️ No se crea ningún recurso de AWS. Los sprints 8 y 9 entregan Dockerfile,
 pipeline y ADR sin despliegue real.
 
 **Requisito previo a cualquier despliegue:**
@@ -201,7 +224,8 @@ pipeline y ADR sin despliegue real.
 **Pregunta:** ¿el estado del pago (`UNPAID` / `PAID`) vive en una tabla `payments` o como columnas de
 `orders`?
 
-**Estado:** ⬜ Abierta. Detectada el **2026-10-11** al implementar US-003.
+**Estado:** ✅ **Resuelta 2026-10-17.** Detectada el **2026-10-11** al implementar US-003, aplicada con su
+valor por defecto en la migración `V1` y ratificada en la aprobación de `requirements-v1.0.md`.
 
 **La contradicción.** Dos documentos del repositorio no coinciden:
 
@@ -237,3 +261,18 @@ edición de `V1`, y habría que revisar US-037, US-038 y el contrato de API.
 | ID | Fecha | Decisión | Resuelta por |
 |---|---|---|---|
 | **D1** | 2026-10-11 | Moneda: **COP**, sin decimales. `NUMERIC(12,0)`, `RoundingMode.UNNECESSARY` | Responsable |
+| **D2** | 2026-10-17 | Admin cancela `PENDING` y `CONFIRMED`; motivo obligatorio en `CONFIRMED` | Responsable (valor por defecto ratificado) |
+| **D3** | 2026-10-17 | Cancelación repetida → `409 Conflict`, no idempotente | Responsable (valor por defecto ratificado) |
+| **D4** | 2026-10-17 | Pedido ajeno → `404`, no `403` | Responsable (valor por defecto ratificado) |
+| **D5** | 2026-10-17 | 1–20 unidades por línea; 10 líneas distintas por pedido | Responsable (valor por defecto ratificado) |
+| **D6** | 2026-10-17 | Desactivar no bloquea pedidos ya creados; manda el snapshot | Responsable (valor por defecto ratificado) |
+| **D7** | 2026-10-17 | Se cobra el precio del snapshot | Responsable (valor por defecto ratificado) |
+| **D8** | 2026-10-17 | Sin caducidad automática de `PENDING`; deuda registrada | Responsable (valor por defecto ratificado) |
+| **D9** | 2026-10-17 | El importe recibido debe igualar el total; si no, `422` | Responsable (valor por defecto ratificado) |
+| **D10** | 2026-10-17 | Email + nombre + contraseña (≥10); rol forzado a `CUSTOMER` | Responsable (valor por defecto ratificado) |
+| **D11** | 2026-10-17 | El registro devuelve `201` sin token | Responsable (valor por defecto ratificado) |
+| **D12** | 2026-10-17 | RS256, 15 minutos, sin refresh token | Responsable (valor por defecto ratificado) |
+| **D13** | 2026-10-17 | Historial completo visible en el detalle del pedido | Responsable (valor por defecto ratificado) |
+| **D14** | 2026-10-17 | Ningún recurso de AWS sin autorización escrita. US-072/081/082 bloqueadas | Responsable (valor por defecto ratificado) |
+| **D15** | 2026-10-17 | El estado del pago son columnas de `orders`; `cash_payments` es el registro del cobro | Responsable (valor por defecto ratificado) |
+| — | 2026-10-17 | `requirements-v1.0.md` pasa a **Aprobado** y **congelado**. Las 15 decisiones quedan cerradas en §11 y §12 | Responsable del proyecto |

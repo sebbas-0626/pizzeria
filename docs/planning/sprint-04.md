@@ -5,6 +5,11 @@
 > **Historias:** US-020, US-021, US-022, US-023, US-030 (capa web), US-031, US-032, US-033, US-034, US-035, US-036, US-037, US-038
 > **Puntos:** 45 · **El sprint más cargado del proyecto**
 > **Documento efímero:** al terminar, lo relevante pasa al backlog y a `api-contract.md`.
+>
+> **Estructura de paquetes: capas globales**, según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md).
+> Este documento se planificó con la estructura por **módulo** (`identity/domain/…`, `payments/domain/…`) y se
+> corrigió el 2026-10-17. Nota: la identidad y los pagos **sí** siguen siendo paquetes lógicos —lo que desaparece
+> es el directorio `identity/`, no el concepto.
 
 ---
 
@@ -45,9 +50,10 @@ Lo que **no** se sacrifica bajo ninguna circunstancia: **US-037** (cobro atómic
 
 ### Tareas
 
-- [ ] `identity/domain/Customer.java`, `Role.java`, `Password.java`
-- [ ] `identity/application/RegisterCustomerUseCase`
-- [ ] `identity/adapters/in/web/AuthController.java`, `RegisterRequest`, `CustomerResponse`
+- [ ] `domain/model/Customer.java`, `Role.java`, `Password.java`
+- [ ] `domain/port/out/CustomerRepositoryPort.java` y `PasswordEncoderPort.java`
+- [ ] `application/usecase/RegisterCustomerUseCase.java` + `application/service/RegisterCustomerService.java`
+- [ ] `infrastructure/adapter/in/web/AuthController.java`, `RegisterRequest`, `CustomerResponse`
 - [ ] `PasswordEncoder` con BCrypt vía `DelegatingPasswordEncoder`
 - [ ] Restricción de email único sin distinguir mayúsculas
 - [ ] Test que captura el log y comprueba que no aparece la contraseña
@@ -73,12 +79,12 @@ Lo que **no** se sacrifica bajo ninguna circunstancia: **US-037** (cobro atómic
 
 ### Tareas
 
-- [ ] Puerto `JwtTokenIssuer` en `identity/application/port/out/`
+- [ ] Puerto `JwtTokenIssuerPort` en `domain/port/out/`
 - [ ] Adaptador con Nimbus JOSE JWT, firma **RS256**
 - [ ] Generación de claves en local; claves por variable de entorno
-- [ ] `SecurityFilterChain` con `oauth2ResourceServer(jwt)`
-- [ ] Filtro `OncePerRequestFilter` que construye el principal
-- [ ] `CustomerPrincipal` con id y roles
+- [ ] `SecurityConfig` en `infrastructure/config/` con `oauth2ResourceServer(jwt)`
+- [ ] `JwtAuthenticationFilter` (`OncePerRequestFilter`) en `shared/security/` que construye el principal
+- [ ] `CustomerPrincipal` con id y roles, en `shared/security/`
 - [ ] Configuración de emisor (`iss`) y caducidad (`exp`)
 - [ ] Script de generación de claves en `scripts/`
 
@@ -181,9 +187,9 @@ Lo que **no** se sacrifica bajo ninguna circunstancia: **US-037** (cobro atómic
 
 ### Tareas
 
-- [ ] `payments/domain/Payment.java`, `PaymentStatus.java`, `CashPayment.java`
-- [ ] `payments/application/port/out/PaymentRepository.java`
-- [ ] `CompletePickupUseCase` con `@Transactional` — **una sola transacción** para cobro + pedido + historial
+- [ ] `domain/model/Payment.java`, `PaymentStatus.java`, `CashPayment.java`
+- [ ] `domain/port/out/PaymentRepositoryPort.java`
+- [ ] `CompletePickupUseCase` en `application/usecase/` + `CompletePickupService` en `application/service/` con `@Transactional` — **una sola transacción** para cobro + pedido + historial
 - [ ] `OrderJpaEntity` + campo `version` para bloqueo optimista
 - [ ] `Order` cuenta con la transición `CONFIRMED → DELIVERED`
 - [ ] Restricción `UNIQUE (order_id)` en `cash_payments` (ya creada en S1)
@@ -276,6 +282,7 @@ escrituras, el punto de rollback y la anotación de la carrera entre dos adminis
 | **Riesgo crítico** | Confiar en la lógica para evitar el doble cobro → la garantía vive en `UNIQUE (order_id)` |
 | **Riesgo** | Filtrar el propietario comparando en memoria en lugar de en la consulta |
 | **Riesgo** | Guardar el hash de contraseña en el DTO de perfil |
+| **Riesgo** | Reintroducir el directorio `identity/` por comodidad → falla `noHayPaquetesHuerfanos` ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md)) |
 | **Decisiones abiertas** | ⚙️ D2, D3, D4, D5, D9, D10, D11, D12, D13 afectan a criterios de aceptación concretos |
 
 ---
@@ -284,4 +291,5 @@ escrituras, el punto de rollback y la anotación de la carrera entre dos adminis
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
+| 2026-10-17 | — | — | Rutas de tareas corregidas a capas globales ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)): `identity/domain/…` → `domain/model/…`, `payments/application/port/out/…` → `domain/port/out/…`, `SecurityConfig` a `infrastructure/config/`, filtro JWT y principal a `shared/security/`. Sin historia empezada. |
 | — | — | — | Sprint no iniciado |

@@ -5,6 +5,10 @@
 > **Historias:** US-010, US-011, US-012, US-013
 > **Puntos:** 16
 > **Documento efímero:** al terminar, lo relevante pasa al backlog y a la documentación de arquitectura.
+>
+> **Estructura de paquetes: capas globales**, según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md).
+> Este es el **primer sprint que escribe código de negocio** y por eso es el primero que aplica la estructura
+> por capas. Las tareas de `sprint-03.md`…`sprint-07.md` se corrigieron el mismo día por el mismo motivo.
 
 ---
 
@@ -23,14 +27,28 @@
 
 ### Tareas
 
-- [ ] `catalog/domain/Pizza.java`, `PizzaVariant.java`, `VariantSize.java`
-- [ ] `catalog/domain/CatalogException.java` y excepciones derivadas
-- [ ] `catalog/application/port/out/PizzaRepository.java` (puerto)
-- [ ] `catalog/application/ListPizzasUseCase.java`, `GetPizzaUseCase.java`
-- [ ] `catalog/adapters/out/persistence/` — entidad JPA, repositorio Spring Data, **adaptador** que implementa el puerto y mappers
-- [ ] `catalog/adapters/in/web/PizzaController.java` + DTOs `record` + mapper
-- [ ] `common/domain/PageRequest.java` y `common/domain/PageResponse.java`
+Paquetes según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) y puertos según
+[ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md). Ningún archivo de este sprint se llama
+`catalog/…`: el nombre del módulo desaparece de los paquetes, **no** de los códigos de error (`CATALOG_…`).
+
+- [ ] `domain/model/Pizza.java`, `PizzaVariant.java`, `VariantSize.java`
+- [ ] `domain/exception/CatalogException.java` y excepciones derivadas (`PizzaNotFoundException`, `VariantNotAvailableException`)
+- [ ] `domain/port/out/PizzaCatalogPort.java` (puerto de salida)
+- [ ] `application/usecase/ListPizzasUseCase.java`, `GetPizzaUseCase.java` (interfaces)
+- [ ] `application/service/ListPizzasService.java`, `GetPizzaService.java` (implementaciones, `@Transactional(readOnly = true)`)
+- [ ] `application/dto/PageRequest.java` y `PageResponse.java` — primitivas de paginación
+- [ ] `infrastructure/adapter/out/persistence/` — entidad JPA, repositorio Spring Data, **adaptador** que implementa el puerto y mappers (`entity/`, `repository/`, `mapper/`)
+- [ ] `infrastructure/adapter/in/web/PizzaController.java` + DTOs `record` + mapper
 - [ ] Índice compuesto en `pizzas (active, name)` si la consulta lo necesita
+
+> **Dos decisiones de esta lista que conviene no deshacer**
+>
+> 1. **`PageRequest` y `PageResponse` viven en `application/dto`, no en `shared/util`.** `ArchitectureRulesTest`
+>    prohíbe que `application` importe `shared`; si la paginación viviera en `shared`, el servicio no podría
+>    usarla y la regla fallaría en el build. El DTO de un caso de uso es, por definición, de `application`.
+> 2. **Los identificadores van en inglés** (`Pizza`, `PizzaVariant`, `PizzaCatalogPort`), según
+>    [`conventions.md`](../development/conventions.md) §2. El árbol de ADR-0004 §3 es **ilustrativo** y usa
+>    nombres en español (`Pedido`, `Precio`): no es una licencia para crear clases en español.
 
 ### Criterios de aceptación
 
@@ -47,11 +65,14 @@
 
 | Prueba | Tipo | Nota |
 |---|---|---|
-| `ListPizzasUseCaseTest` | Unitario, sin Spring | Doble del puerto |
-| `GetPizzaUseCaseTest` | Unitario | Caso «no existe» incluido |
+| `ListPizzasServiceTest` | Unitario, sin Spring | Doble de `PizzaCatalogPort` |
+| `GetPizzaServiceTest` | Unitario | Caso «no existe» incluido |
 | `PizzaControllerTest` | `@WebMvcTest` | 200, 404, paginación |
-| `PizzaRepositoryAdapterIT` | Integración con Testcontainers | **Verifica que no hay N+1** |
-| `ArchitectureRulesTest` | ArchUnit | Sigue verde tras añadir el módulo |
+| `PizzaCatalogAdapterIT` | Integración con Testcontainers | **Verifica que no hay N+1** |
+| `ArchitectureRulesTest` | ArchUnit | Sigue verde tras añadir las capas |
+
+> Las pruebas de caso de uso apuntan a la **implementación** (`application/service`), no a la interfaz: la
+> interfaz de `application.usecase` no tiene comportamiento que probar y no se instancia directamente.
 
 ### Riesgo: N+1
 
@@ -65,10 +86,10 @@ hay más de las esperadas. Sin esa comprobación, el defecto aparece cuando ya h
 
 ### Tareas
 
-- [ ] `CreatePizzaUseCase`, `UpdatePizzaUseCase`
-- [ ] Comandos de aplicación con validación
-- [ ] `AdminPizzaController` con `@Valid`
-- [ ] `CreatePizzaRequest`, `UpdatePizzaRequest` (campos opcionales)
+- [ ] `application/usecase/CreatePizzaUseCase.java`, `UpdatePizzaUseCase.java` + `application/service/CreatePizzaService.java`, `UpdatePizzaService.java`
+- [ ] Comandos de aplicación con validación en `application/dto`
+- [ ] `infrastructure/adapter/in/web/AdminPizzaController.java` con `@Valid`
+- [ ] `CreatePizzaRequest`, `UpdatePizzaRequest` (campos opcionales) como DTOs de transporte
 - [ ] Regla de unicidad de nombre entre pizzas activas
 - [ ] Pruebas de autorización con `@MockitoBean` (nunca `@MockBean`)
 
@@ -94,8 +115,8 @@ semántica se escribe en `api-contract.md` y se prueba.
 
 ### Tareas
 
-- [ ] `CreateVariantUseCase`, `UpdateVariantUseCase`
-- [ ] `AdminVariantController`
+- [ ] `application/usecase/CreateVariantUseCase.java`, `UpdateVariantUseCase.java` + implementaciones en `application/service`
+- [ ] `infrastructure/adapter/in/web/AdminVariantController.java`
 - [ ] Validación de precio positivo (dominio) y rango (DTO)
 - [ ] Test que demuestra que cambiar el precio no altera pedidos previos
 
@@ -136,17 +157,26 @@ semántica se escribe en `api-contract.md` y se prueba.
 ## 6. Archivos creados o modificados
 
 ```text
-catalog/
-├── domain/          Pizza, PizzaVariant, VariantSize, excepciones
-├── application/     casos de uso + port/out/PizzaRepository
-├── adapters/
-│   ├── in/web/      PizzaController, AdminPizzaController, dto/, mappers
-│   └── out/persistence/  entidades JPA, repositorio Spring Data, adaptador, mappers
-└── config/          CatalogBeanConfiguration
+backend/src/main/java/com/pizzeria/
+├── domain/
+│   ├── model/            Pizza, PizzaVariant, VariantSize
+│   ├── exception/        CatalogException, PizzaNotFoundException, VariantNotAvailableException
+│   └── port/out/         PizzaCatalogPort
+├── application/
+│   ├── usecase/          ListPizzasUseCase, GetPizzaUseCase, CreatePizzaUseCase, UpdatePizzaUseCase,
+│   │                     CreateVariantUseCase, UpdateVariantUseCase
+│   ├── service/          Implementaciones @Transactional de las seis interfaces anteriores
+│   └── dto/              PageRequest, PageResponse, comandos y respuestas de caso de uso
+└── infrastructure/
+    ├── adapter/in/web/       PizzaController, AdminPizzaController, AdminVariantController, dto/, mapper/
+    └── adapter/out/persistence/  entity/, repository/, PizzaCatalogAdapter, mapper/
 
 docs/architecture/api-contract.md     (sección de catálogo)
 docs/architecture/data-model.md       (detalle de pizzas y variantes)
 ```
+
+> No hay `config/` de módulo: si hiciera falta algún bean de configuración del catálogo, va en
+> `infrastructure/config/BeanConfig.java`, que es donde vive el resto.
 
 ---
 
@@ -171,6 +201,7 @@ docs/architecture/data-model.md       (detalle de pizzas y variantes)
 | **Bloquea a** | Sprint 03 (los pedidos necesitan precio del catálogo) |
 | **Riesgo** | Reutilizar la entidad JPA como modelo de dominio por comodidad → rompe RN y el test ArchUnit |
 | **Riesgo** | Olvidar el filtro de disponibilidad en el listado público → variantes no disponibles visibles |
+| **Riesgo** | Crear `catalog/` «porque es más cómodo agrupar» → contradice ADR-0004 y falla `noHayPaquetesHuerfanos` |
 
 ---
 
@@ -178,4 +209,5 @@ docs/architecture/data-model.md       (detalle de pizzas y variantes)
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
+| 2026-10-17 | — | — | Corregidas las rutas de este documento y de `sprint-03`…`sprint-07`: el sprint se planificó con la estructura por **módulo** (`catalog/domain/…`, `catalog/application/port/out/…`), sustituida por **capas globales** el 2026-10-15 ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)). Sin historia empezada. |
 | — | — | — | Sprint no iniciado |

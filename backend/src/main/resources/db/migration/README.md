@@ -1,8 +1,8 @@
 # Migraciones de base de datos
 
 > Fuente de verdad del esquema: los archivos `V*.sql` de esta carpeta.
-> Especificación funcional: [`docs/requirements/requirements-v1.0.md`](../../../../../docs/requirements/requirements-v1.0.md) §7.
-> Convenciones aplicadas: [`docs/development/spring-conventions.md`](../../../../../docs/development/spring-conventions.md) §4.4.
+> Especificación funcional: [`docs/requirements/requirements-v1.0.md`](../../../../../../docs/requirements/requirements-v1.0.md) §7.
+> Convenciones aplicadas: [`docs/development/spring-conventions.md`](../../../../../../docs/development/spring-conventions.md) §4.4.
 
 ---
 
@@ -116,8 +116,8 @@ en lugar de taparlo.
 
 **Consecuencia:** la garantía del redondeo vive **únicamente** en el objeto de valor `Money` del dominio,
 que usa `setScale(0, RoundingMode.UNNECESSARY)` y **lanza excepción antes de que el importe llegue a la
-base** ([`conventions.md` §4](../conventions.md)). Ninguna restricción SQL podría evitarlo: el valor ya
-ha sido convertido cuando la base lo ve.
+base** ([`conventions.md` §4](../../../../../../docs/development/conventions.md)). Ninguna restricción SQL
+podría evitarlo: el valor ya ha sido convertido cuando la base lo ve.
 
 Por qué importa: si alguien añadiera una ruta que construyera un importe sin pasar por `Money`, el
 redondeo pasaría desapercibido. La regla que lo evita no es una restricción, es **no saltarse `Money`**.

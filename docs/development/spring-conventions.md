@@ -11,18 +11,22 @@ Stack: **Java 21 LTS · Spring Boot 4.1.x · Spring Framework 7.0.x · Maven 3.1
 
 Estas reglas se comprueban automáticamente con **ArchUnit**. Un test de arquitectura es criterio de aceptación de US-001.
 
+Normativa de la estructura: [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) §3. De dónde salen los puertos: [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md).
+
 ```java
-// Referencia de la regla que se implementará en el Sprint 1.
-// NO se escribe hasta US-001; aquí queda la especificación.
+// Implementado en backend/src/test/java/com/pizzeria/architecture/ArchitectureRulesTest.java
 ```
 
 | Capa | Puede importar | Prohibido importar |
 |---|---|---|
 | `..domain..` | `java..`, nada más | `org.springframework..`, `jakarta..`, `com.fasterxml..`, `software.amazon.awssdk..`, `lombok..` |
-| `..application..` | `..domain..` | `org.springframework.web..`, `org.springframework.data..`, `com.fasterxml..`, `software.amazon.awssdk..` |
-| `..adapters.in.web..` | `..application..`, Spring Web/Security/Jackson | `..adapters.out..`, `jakarta.persistence..` |
-| `..adapters.out.persistence..` | `..application.port.out..`, `..domain..`, Spring Data | `..adapters.in..` |
-| `..adapters.out.storage..` / `..messaging..` | `..application.port.out..`, SDK AWS v2 | `..adapters.in..`, `..domain..`, `jakarta.persistence..` |
+| `..application..` | `..domain..`, `..application..` | `..infrastructure..`, `..shared..`, `org.springframework.web..`, `org.springframework.data..`, `com.fasterxml..`, `software.amazon.awssdk..` |
+| `..infrastructure.adapter.in.web..` | `..application..`, Spring Web/Security/Jackson | `..infrastructure.adapter.out..`, `jakarta.persistence..` |
+| `..infrastructure.adapter.out.persistence..` | `..domain.port.out..`, `..domain.model..`, Spring Data | `..infrastructure.adapter.in..`, `..application..` |
+| `..infrastructure.adapter.out.storage..` / `..messaging..` | `..domain.port.out..`, SDK AWS v2 | `..infrastructure.adapter.in..`, `..domain.model..`, `..domain.exception..`, `jakarta.persistence..` |
+| `..shared..` | `..domain.exception..`, `..shared..`, `..infrastructure..` | `..application..`, `..domain.model..`, `..domain.port..`, `..infrastructure.adapter.out..` |
+
+Además, `noHayPaquetesHuerfanos` comprueba que bajo `com.pizzeria` no exista ningún paquete de primer nivel distinto de `domain`, `application`, `infrastructure` y `shared`.
 
 **Excepciones permitidas y documentadas:**
 
@@ -64,7 +68,7 @@ public final class PlaceOrderUseCase {
 
 ### 2.2 Configuración
 
-- Un `@Configuration` por módulo, en `com.pizzeria.<modulo>.config`.
+- Configuración transversal en `com.pizzeria.infrastructure.config`.
 - Propiedades externas con `@ConfigurationProperties` validadas: nunca cadenas sueltas en `@Value`.
 - Perfiles: `application.yml` (base, sólo lo imprescindible), `application-local.yml`, `application-test.yml`. Nada de secretos en ninguna de ellas.
 - `ddl-auto=validate`. **Nunca** `create`, `update` ni `none`.
@@ -85,7 +89,7 @@ public List<OrderSummary> listMyOrders(UUID customerId, PageRequest page) { ... 
 
 | Regla | Detalle |
 |---|---|
-| Dónde | En los **casos de uso** (`application`) |
+| Dónde | En la **implementación** del caso de uso (`application.service`), nunca en la interfaz (`application.usecase`) |
 | **Prohibido** | `@Transactional` en controladores, entidades de dominio o repositorios |
 | Escrituras | `@Transactional` con rollback por defecto ante cualquier `RuntimeException` |
 | Lecturas | `@Transactional(readOnly = true)` |
@@ -105,14 +109,15 @@ public List<OrderSummary> listMyOrders(UUID customerId, PageRequest page) { ... 
 
 ### 4.1 Separación de modelos ([ADR-0003](../adr/0003-dominio-separado-de-jpa.md))
 
-Las entidades JPA viven **exclusivamente** en `adapters.out.persistence` y **nunca** se exponen fuera de ese paquete.
+Las entidades JPA viven **exclusivamente** en `infrastructure.adapter.out.persistence` y **nunca** se exponen fuera de ese paquete.
 
 ```text
-domain.Order                    ← agregado de negocio, sin anotaciones
-        ↑
-        │  mapper explícito (OrderPersistenceMapper)
-        ↓
-persistence.OrderJpaEntity      ← @Entity, tabla orders
+domain.model.Order                    ← agregado de negocio, sin anotaciones
+            ↑
+            │  mapper explícito (OrderPersistenceMapper)
+            ↓
+infrastructure.adapter.out.persistence.entity.OrderJpaEntity
+                                        ← @Entity, tabla orders
 ```
 
 | Regla | Detalle |
@@ -202,10 +207,10 @@ Formato único **RFC 9457** (`application/problem+json`) mediante `ProblemDetail
 - `timestamp` y `traceId`.
 
 **El estado HTTP no lo decide la excepción, lo decide una tabla.** El dominio no sabe qué es un 404, así
-que `DomainException` transporta un `ErrorCode` (`common.domain`) y `common.web.GlobalExceptionHandler`
+que `DomainException` transporta un `ErrorCode` (`domain.exception`) y `shared.exception.GlobalExceptionHandler`
 lo traduce. Añadir un caso es añadir una fila a la tabla, no una rama en cada sitio.
 
-Mapeo por defecto en `common.web.GlobalExceptionHandler`:
+Mapeo por defecto en `shared.exception.GlobalExceptionHandler`:
 
 | Excepción | HTTP | Código |
 |---|---|---|
@@ -231,7 +236,7 @@ cualquier cosa, incluido un fragmento de consulta.
 | Aspecto | Configuración |
 |---|---|
 | Identificador | UUID por petición, en el MDC bajo `traceId` |
-| Filtro | `common.web.TraceIdFilter` (`OncePerRequestFilter`), orden `HIGHEST_PRECEDENCE` |
+| Filtro | `infrastructure.adapter.in.web.TraceIdFilter` (`OncePerRequestFilter`), orden `HIGHEST_PRECEDENCE` |
 | Viaja en | Log, cabecera de respuesta `X-Trace-Id` y cuerpo del error `traceId` |
 | Cliente puede enviarlo | Sí, por `X-Trace-Id`, **sólo si tiene forma de UUID**. Si no, se genera otro |
 | Limpieza | El MDC se limpia en un `finally`: si no, el hilo del contenedor heredaría el identificador de la petición anterior |
@@ -261,7 +266,7 @@ sólo lo que parses como UUID.
 | Aspecto | Configuración |
 |---|---|
 | Librería | `springdoc-openapi-starter-webmvc-ui` **3.1.1** |
-| Dónde se configura lo que no se deduce del código | [`OpenApiConfig`](../../backend/src/main/java/com/pizzeria/common/config/OpenApiConfig.java) |
+| Dónde se configura lo que no se deduce del código | [`OpenApiConfig`](../../backend/src/main/java/com/pizzeria/infrastructure/config/OpenApiConfig.java) |
 | Endpoints | `/v3/api-docs`, `/v3/api-docs.yaml`, `/swagger-ui/index.html` |
 | **Dónde está activo** | **Sólo en el perfil `local`** |
 | **Dónde NO está activo** | En cualquier otro perfil, incluido el de producción |
@@ -335,7 +340,9 @@ Cada operación declara el suyo en la historia que la crea.
 | Aislamiento | Limpieza por test (`@Sql` con rollback, o `DELETE` en orden) |
 | Anatomía | Si Docker no está disponible, el test **falla con un mensaje claro**, no se salta en silencio |
 | Imagen | `postgres:17-alpine` con tag **fijado**, nunca `latest` |
-| Emulador AWS | Floci en el puerto 4566; se verificará si `LocalStackContainer` es compatible o si hace falta `GenericContainer` (tarea de US-051) |
+| Emulador AWS | Floci en el puerto 4566; el endpoint se inyecta por variable de entorno ([ADR-0006](../adr/0006-floci-como-emulador-aws.md)). **Guía práctica: [aws-local.md](aws-local.md)** |
+| Servicios que se usan | **S3** (imágenes), **SQS** (mensajería), **ECR** y **EC2** (despliegue), **IAM**, **STS**, **CloudWatch**. Nada más. Ver [aws-local.md §2](aws-local.md) |
+| Emulador vs. AWS real | El emulador **no autoriza** nada. Recursos reales siguen exigiendo autorización escrita, presupuesto y alarma de coste (`decisions-pending.md` D14) |
 
 ### 6.4 Reemplazos de Spring Boot 3.4+
 
@@ -350,10 +357,12 @@ Cada operación declara el suyo en la historia que la crea.
 ## 7. Integraciones AWS
 
 - El **SDK de AWS v2 no aparece** en `domain` ni en `application`.
-- Toda integración se declara como un **puerto** en `application.port.out` y se implementa en `adapters.out.storage` o `adapters.out.messaging`.
+- Toda integración se declara como un **puerto** en `domain.port.out` y se implementa en `infrastructure.adapter.out.storage` o `..messaging`.
 - El perfil por defecto **no** depende de AWS: el arranque sin S3/SQS debe funcionar siempre (ver US-050).
 - El emulador local es **Floci** en `http://localhost:4566` con credenciales de prueba; el endpoint se inyecta por variable de entorno ([ADR-0006](../adr/0006-floci-como-emulador-aws.md)).
-- **Ningún recurso real de AWS se crea sin autorización escrita del responsable**, con presupuesto y alarma de coste previos.
+  Detalle operativo en **[aws-local.md](aws-local.md)**: qué servicios se usan, cómo se levanta y qué
+  trampas tiene el AWS SDK v2 con `endpointOverride`.
+- **Ningún recurso real de AWS se crea sin autorización escrita del responsable**, con presupuesto y alarma de coste previos. El emulador reduce el riesgo técnico del despliegue; **no reduce su coste**.
 
 ---
 

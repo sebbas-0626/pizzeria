@@ -5,6 +5,10 @@
 > **Historias:** US-060, US-061, US-062
 > **Puntos:** 26
 > **Documento efímero:** al terminar, lo relevante pasa al backlog y a `architecture.md`.
+>
+> **Estructura de paquetes: capas globales**, según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md).
+> Corregido el 2026-10-17: el puerto de publicación va en `domain/port/out/` y el adaptador SQS en
+> `infrastructure/adapter/out/messaging/`.
 
 ---
 
@@ -32,10 +36,10 @@ publicar directamente.
 ### Tareas
 
 - [ ] Eventos inmutables: `OrderPlaced`, `OrderConfirmed`, `OrderCancelled`, `OrderPickedUp`
-- [ ] Puerto `DomainEventPublisher` en `orders.application.port.out`
+- [ ] Puerto `DomainEventPublisher` en `domain/port/out/`
 - [ ] El agregado **recoge** los eventos; no los publica (no conoce el mecanismo)
-- [ ] El caso de uso los publica **dentro de la transacción**
-- [ ] Adaptador con `ApplicationEventPublisher` de Spring
+- [ ] El caso de uso los publica **dentro** de la transacción
+- [ ] Adaptador en `infrastructure/adapter/out/messaging/` sobre `ApplicationEventPublisher` de Spring
 - [ ] Test ArchUnit que prohíbe el SDK de AWS en `domain`
 
 ### Criterios de aceptación
@@ -50,9 +54,9 @@ publicar directamente.
 ### El patrón que se instala aquí
 
 ```text
-Order.confirm(...)   →  order.recorderOrderConfirmed(...)   ← el dominio no publica
-PlaceOrderUseCase    →  orderRepository.save(order)
-                        order.pullEvents().forEach(publisher::publish)   ← dentro de @Transactional
+Order.confirm(...)   →  order.recordOrderConfirmed(...)    ← el dominio no publica
+PlaceOrderService    →  orderRepositoryPort.save(order)
+                        order.pullEvents().forEach(publisherPort::publish)   ← dentro de @Transactional
 ```
 
 El dominio dice **qué** pasó. La aplicación decide **cómo** se comunica. Esa separación es la razón de ser
@@ -179,4 +183,5 @@ terminar luego» sin decir que es una entrega parcial.
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
+| 2026-10-17 | — | — | Rutas corregidas a capas globales ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)): puerto `DomainEventPublisher` en `domain/port/out/`, adaptador SQS en `infrastructure/adapter/out/messaging/`. Corregido también el pseudocódigo del patrón (usaba `PlaceOrderUseCase` y un `record…` mal escrito). Sin historia empezada. |
 | — | — | — | Sprint no iniciado |

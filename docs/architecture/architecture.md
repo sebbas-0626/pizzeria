@@ -13,11 +13,14 @@
 | Documento | Existe | Contiene |
 |---|---|---|
 | `architecture.md` (este) | ✅ | Stack con versiones, diseño de capas de alto nivel, resultado del spike |
+| [`estructuras.md`](estructuras.md) | ✅ | Referencia: las dos estructuras hexagonales posibles (la adoptada y la alternativa) y la arquitectura global del proyecto. **No es fuente de verdad** |
+| `data-model.dbml` | ✅ | Boceto del modelo de datos y diferencias frente al SQL desplegable |
+| `aws-local.md` *(en `docs/development/`)* | ✅ | Emulador Floci: servicios usados, arranque y trampas del SDK |
 | `data-model.md` | ❌ Sprint 5 (US-044) | Esquema de datos y su justificación |
 | `api-contract.md` | ✅ Sprint 1 (US-005) | Contrato HTTP: convenciones, autenticación, catálogo de errores y endpoints |
 | `security.md` | ❌ Sprint 5 (US-044) | Modelo de amenazas y controles |
 | `openapi.json` | ❌ Sprint 5 (US-045) | Snapshot verificable del contrato |
-| ADR | Sólo [`ADR-0010`](../adr/0010-versiones-de-java-y-spring-boot.md) | ADR-0001…ADR-0009 están **referenciadas** en otros documentos pero aún no redactadas. No se enlazan aquí para no crear rutas rotas |
+| ADR | [`ADR-0004`](../adr/0004-estructura-de-paquetes-por-capas.md), [`ADR-0005`](../adr/0005-los-puertos-se-declaran-en-el-dominio.md), [`ADR-0006`](../adr/0006-floci-como-emulador-aws.md), [`ADR-0010`](../adr/0010-versiones-de-java-y-spring-boot.md) | ADR-0001, ADR-0002, ADR-0003 y ADR-0007…ADR-0009 están **referenciadas** en otros documentos pero aún no redactadas. No se enlazan aquí para no crear rutas rotas |
 
 ---
 
@@ -27,11 +30,12 @@ Una pizzería de **una sola sede**, con pedidos **para recogida presencial** y *
 
 | Decisión | Valor | Dónde está la fuente |
 |---|---|---|
-| Estilo arquitectónico | **Monolito modular con arquitectura hexagonal por módulo** | ADR-0008 (pendiente de redactar), `AGENTS.md` §3 |
+| Estilo arquitectónico | **Monolito con arquitectura hexagonal por capas** | [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), `AGENTS.md` §3 |
 | Unidad de despliegue | **Un único artefacto** (`pizzeria-backend.jar`) | `backend/pom.xml` |
-| Módulos | `catalog`, `identity`, `orders`, `payments`, `common` | `AGENTS.md` §3.1 |
-| Frontera de cada módulo | `domain` · `application` · `adapters.in.web` · `adapters.out.persistence` · `config` | `AGENTS.md` §3.1 |
-| Dirección de dependencias | Los adaptadores dependen del dominio; el dominio no depende de nadie | [`spring-conventions.md` §1](../development/spring-conventions.md) |
+| Capas | `domain` · `application` · `infrastructure` · `shared` | [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) §3 |
+| Frontera de cada capa | `domain.port` · `application.{usecase,service,dto}` · `infrastructure.{adapter.in.web,adapter.out.*,config}` · `shared.{security,exception,util}` | `AGENTS.md` §3.1 |
+| Dónde viven los puertos | `domain.port.out` (repositorios y servicios externos) | [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md) |
+| Dirección de dependencias | `infrastructure → application → domain`; el dominio no depende de nadie | [`spring-conventions.md` §1](../development/spring-conventions.md) |
 | Moneda | **COP**, sin decimales: `BigDecimal` escala 0, `RoundingMode.UNNECESSARY`, `NUMERIC(12,0)` | `requirements-v1.0.md` RN-IM-05, [`conventions.md` §4](../development/conventions.md) |
 
 ### 1.1 Estructura del repositorio
@@ -51,10 +55,13 @@ Normativa y completa en [`spring-conventions.md` §1](../development/spring-conv
 | Capa | Puede importar | Prohibido importar |
 |---|---|---|
 | `..domain..` | `java..` | Spring, Jakarta, JPA, Jackson, SDK AWS, Lombok |
-| `..application..` | `..domain..` | Spring Web, Spring Data, Jackson, SDK AWS |
-| `..adapters.in.web..` | `..application..`, Spring Web/Security/Jackson | `..adapters.out..`, entidades JPA |
-| `..adapters.out.persistence..` | `..application.port.out..`, `..domain..`, Spring Data | `..adapters.in..` |
-| `..adapters.out.storage..` / `..messaging..` | `..application.port.out..`, SDK AWS v2 | `..adapters.in..`, `..domain..`, JPA |
+| `..application..` | `..domain..`, `..application..` | `..infrastructure..`, `..shared..`, Spring Web, Spring Data, Jackson, SDK AWS |
+| `..infrastructure.adapter.in.web..` | `..application..`, Spring Web/Security/Jackson | `..infrastructure.adapter.out..`, entidades JPA |
+| `..infrastructure.adapter.out.persistence..` | `..domain.port.out..`, `..domain.model..`, Spring Data | `..infrastructure.adapter.in..`, `..application..` |
+| `..infrastructure.adapter.out.storage..` / `..messaging..` | `..domain.port.out..`, SDK AWS v2 | `..infrastructure.adapter.in..`, `..domain.model..`, `..domain.exception..`, JPA |
+| `..shared..` | `..domain.exception..`, `..shared..`, `..infrastructure..` | `..application..`, `..domain.model..`, `..domain.port..`, `..infrastructure.adapter.out..` |
+
+Además, `ArchitectureRulesTest.noHayPaquetesHuerfanos` fija la lista de paquetes de primer nivel: sólo `domain`, `application`, `infrastructure` y `shared`.
 
 **Excepciones documentadas:** `application` puede usar `@Transactional` (la frontera transaccional es una decisión de aplicación) y `java.time.Clock` (abstracción del JDK, no de Spring).
 
@@ -100,8 +107,8 @@ Todas las versiones de esta tabla son **verificadas**: se leyeron del árbol de 
 | Base de datos | **PostgreSQL** | **17** (`17.11` en la prueba de integración; imagen `postgres:17-alpine`) | `application-*.yml`, Testcontainers | `NUMERIC`, `CHECK`, `TIMESTAMPTZ` y `UNIQUE` son lo que hace cumplir el negocio en la base |
 | Driver JDBC | `org.postgresql:postgresql` | 42.7.13 | BOM | ÚNico driver oficial mantenido por la comunidad de PostgreSQL |
 | Pool de conexiones | HikariCP | 7.0.2 | BOM | Pool por defecto de Spring Boot |
-| ORM | Hibernate ORM | 7.4.5.Final | BOM |sólo en `adapters.out.persistence`, nunca en el dominio (ADR-0003) |
-| Acceso a datos | Spring Data JPA | 4.1.1 | BOM | Repositorios como **puertos de salida** (ADR-0005) |
+| ORM | Hibernate ORM | 7.4.5.Final | BOM |sólo en `infrastructure.adapter.out.persistence`, nunca en el dominio (ADR-0003) |
+| Acceso a datos | Spring Data JPA | 4.1.1 | BOM | Repositorios como **puertos de salida** declarados en `domain.port.out` (ADR-0005) |
 | API de persistencia | `jakarta.persistence-api` | 3.2.0 | BOM | Estandarización de JPA |
 | Migraciones | Flyway Core | 12.4.0 | BOM | El esquema es **sólo** de Flyway |
 | Soporte PostgreSQL | `flyway-database-postgresql` | 12.4.0 | BOM | Módulo separado desde Flyway 10 |
@@ -144,7 +151,7 @@ Todas las versiones de esta tabla son **verificadas**: se leyeron del árbol de 
 | Componente | Tecnología | Versión | Entra en | Nota |
 |---|---|---|---|---|
 | Emulador local | **Floci** | — | US-051 | Puerto 4566, credenciales de prueba, `endpointOverride` por variable de entorno (ADR-0006, pendiente de redactar) |
-| SDK | AWS SDK for Java **v2** | — | US-050 / US-060 | **Prohibido** en `domain` y `application`; sólo en `adapters.out.storage` y `adapters.out.messaging` |
+| SDK | AWS SDK for Java **v2** | — | US-050 / US-060 | **Prohibido** en `domain` y `application`; sólo en `infrastructure.adapter.out.storage` y `..messaging` |
 | Almacenamiento | S3 (imágenes de pizza) | — | US-050…US-052 | Puerto `ImageStorage` (`store` / `presign` / `delete`) |
 | Mensajería | SQS + *transactional outbox* | — | US-060…US-062 | A partir de S7; hoy **no existe** en el proyecto |
 

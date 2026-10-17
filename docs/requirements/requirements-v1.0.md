@@ -1,13 +1,15 @@
 # Requisitos del sistema — Backend Pizzería
 
 - **Versión:** 1.0
-- **Estado:** **Propuesta para aprobación** — contiene decisiones marcadas con ⚙️ pendientes de confirmar
-- **Fecha:** 2026-10-11
+- **Estado:** ✅ **Aprobado** el 2026-10-17 · **congelado**
+- **Fecha:** 2026-10-11 (redactado) · 2026-10-17 (aprobado)
 - **Ámbito:** backend de una pizzería con una única sede, pedidos para recogida presencial y pago en efectivo
-- **Documento fuente de verdad nº 1** (ver [`AGENTS.md`](../AGENTS.md) §1)
+- **Documento fuente de verdad nº 1** (ver [`AGENTS.md`](../../AGENTS.md) §1)
 
-> Cuando se confirmen las decisiones pendientes (⚙️), este documento pasa a **Aprobado** y deja de ser editable:
-> cualquier cambio posterior genera una `requirements-v1.1.md` con su registro de cambios.
+> **Este documento está congelado.** Las 14 decisiones pendientes se ratificaron con sus valores por defecto el
+> 2026-10-17 (§11 y §12), de modo que **ya no queda ninguna marca ⚙️**. Cualquier cambio posterior a esta fecha
+> **no se edita aquí**: genera una `requirements-v1.1.md` con su registro de cambios, según la regla
+> anti-contradicción de `AGENTS.md` §1.
 
 ---
 
@@ -137,8 +139,8 @@ servidor y que cada cobro queda registrado de forma atómica con la entrega**.
 | **RN-ES-04** | Cualquier transición no permitida se rechaza |
 | **RN-ES-05** | La validación de transiciones reside en el dominio, no en el controlador |
 | **RN-ES-06** | Cada transición se registra en el historial con estado origen, destino, actor, fecha y motivo |
-| **RN-ES-07** | ⚙️ Confirmar un pedido **no** cambia el estado del pago, que permanece `UNPAID` |
-| **RN-ES-08** | ⚙️ Los pedidos `PENDING` no caducan automáticamente en esta versión |
+| **RN-ES-07** | Confirmar un pedido **no** cambia el estado del pago, que permanece `UNPAID` |
+| **RN-ES-08** | Los pedidos `PENDING` no caducan automáticamente en esta versión |
 
 ### 5.4 Cancelación — RN-CA
 
@@ -146,18 +148,18 @@ servidor y que cada cobro queda registrado de forma atómica con la entrega**.
 |---|---|
 | **RN-CA-01** | El cliente sólo puede cancelar **sus propios** pedidos |
 | **RN-CA-02** | El cliente sólo puede cancelar pedidos en estado `PENDING` |
-| **RN-CA-03** | ⚙️ El administrador puede cancelar pedidos en `PENDING` y en `CONFIRMED` |
-| **RN-CA-04** | ⚙️ En `CONFIRMED`, el motivo de la cancelación es obligatorio |
+| **RN-CA-03** | El administrador puede cancelar pedidos en `PENDING` y en `CONFIRMED` |
+| **RN-CA-04** | En `CONFIRMED`, el motivo de la cancelación es obligatorio |
 | **RN-CA-05** | El administrador nunca puede cancelar un pedido `DELIVERED` o `CANCELLED` |
-| **RN-CA-06** | ⚙️ Una segunda cancelación sobre un pedido ya cancelado produce `409 Conflict` |
+| **RN-CA-06** | Una segunda cancelación sobre un pedido ya cancelado produce `409 Conflict` |
 
 ### 5.5 Recogida y cobro — RN-PG
 
 | ID | Regla |
 |---|---|
-| **RN-PG-01** | ⚙️ La recogida sólo se puede registrar sobre un pedido en `CONFIRMED` |
+| **RN-PG-01** | La recogida sólo se puede registrar sobre un pedido en `CONFIRMED` |
 | **RN-PG-02** | El importe registrado en el cobro es exactamente el total del pedido |
-| **RN-PG-03** | ⚙️ Si el importe recibido difiere del total, la operación se rechaza con `422` |
+| **RN-PG-03** | Si el importe recibido difiere del total, la operación se rechaza con `422` |
 | **RN-PG-04** | El cobro y el paso a `DELIVERED` se confirman en una **única transacción** |
 | **RN-PG-05** | Si la operación falla, **no** puede quedar el pedido `DELIVERED` sin cobro registrado |
 | **RN-PG-06** | Si la operación falla, **no** puede quedar un cobro registrado sin el pedido en `DELIVERED` |
@@ -170,8 +172,8 @@ servidor y que cada cobro queda registrado de forma atómica con la entrega**.
 |---|---|
 | **RN-DS-01** | No se puede ordenar una variante inactiva o no disponible |
 | **RN-DS-02** | Una pizza sin ninguna variante disponible no aparece en el catálogo público |
-| **RN-DS-03** | ⚙️ Desactivar una variante no bloquea pedidos ya creados; el histórico manda |
-| **RN-DS-04** | ⚙️ Cada línea admite entre 1 y 20 unidades, y un pedido admite hasta 10 líneas distintas (ver D5) |
+| **RN-DS-03** | Desactivar una variante no bloquea pedidos ya creados; el histórico manda |
+| **RN-DS-04** | Cada línea admite entre 1 y 20 unidades, y un pedido admite hasta 10 líneas distintas (ver D5) |
 
 ### 5.7 Seguridad — RN-SE
 
@@ -182,9 +184,9 @@ servidor y que cada cobro queda registrado de forma atómica con la entrega**.
 | **RN-SE-03** | **No existe ninguna forma pública de obtener el rol `ADMIN`** |
 | **RN-SE-04** | La propiedad de un pedido se verifica **en el servidor**, filtrando por identificador de cliente en la consulta |
 | **RN-SE-05** | Un cliente no puede consultar ni modificar pedidos ajenos |
-| **RN-SE-06** | ⚙️ El acceso a un pedido ajeno responde `404`, no `403`, para no revelar su existencia (ver D4) |
+| **RN-SE-06** | El acceso a un pedido ajeno responde `404`, no `403`, para no revelar su existencia (ver D4) |
 | **RN-SE-07** | No se registran contraseñas, tokens, cabeceras de autorización ni trazas de pila en los registros del sistema |
-| **RN-SE-08** | ⚙️ El token es firmado con `RS256`, caduca a los 15 minutos y no hay token de renovación en esta versión |
+| **RN-SE-08** | El token es firmado con `RS256`, caduca a los 15 minutos y no hay token de renovación en esta versión |
 | **RN-SE-09** | Ningún secreto se versiona en el repositorio |
 
 ---
@@ -221,7 +223,8 @@ servidor y que cada cobro queda registrado de forma atómica con la entrega**.
 | `cash_payments` | Cobro en efectivo | `UNIQUE (order_id)` — impide el doble cobro |
 | `order_status_history` | Auditoría de transiciones | Inmutable, sin endpoint de escritura |
 
-Detalle completo en [`docs/architecture/data-model.md`](../architecture/data-model.md).
+Boceto del modelo en [`data-model.dbml`](../architecture/data-model.dbml). La justificación de cada tabla,
+columna y restricción está en `data-model.md`, que se escribe en US-044.
 
 ---
 
@@ -290,27 +293,32 @@ No se implementará en esta versión:
 
 ---
 
-## 11. Decisiones pendientes que bloquean la aprobación
+## 11. Decisiones ratificadas en la aprobación
 
-Estas decisiones están registradas en [`docs/planning/decisions-pending.md`](../planning/decisions-pending.md).
-Cada una tiene un valor por defecto (⚙️) aplicado en este documento.
+Estas decisiones están registradas en [`docs/planning/decisions-pending.md`](../planning/decisions-pending.md),
+que conserva el historial completo de cada una. **Todas se ratificaron el 2026-10-17 con su valor por
+defecto**, que es el valor que este documento aplica.
 
-| ID | Decisión | Requisitos afectados | Bloquea |
-|---|---|---|---|
-| **D1** | Moneda y número de decimales | RN-IM-06 | US-003 (esquema) |
-| **D2** | Reglas de cancelación del administrador | RN-CA-03, RN-CA-04 | US-036 |
-| **D3** | Cancelación repetida | RN-CA-06 | US-033 |
-| **D4** | Acceso a pedido ajeno: 404 o 403 | RN-SE-06 | US-022, US-032 |
-| **D5** | Límites de cantidad y de líneas | RN-DS-04 | US-030 |
-| **D6** | Variante desactivada con pedido abierto | RN-DS-03 | US-012, US-030 |
-| **D7** | Cambio de precio con pedido abierto | RN-FH-02 | US-012 |
-| **D8** | Caducidad de pedidos `PENDING` | RN-ES-08 | Fuera del MVP |
-| **D9** | Importe recibido en la recogida | RN-PG-02, RN-PG-03 | US-037 |
-| **D10** | Ficha de cliente | RF-ID-01 | US-020 |
-| **D11** | Si el registro devuelve token | RF-ID-05 | US-020 |
-| **D12** | Algoritmo, caducidad y renovación del token | RN-SE-08 | US-021 |
-| **D13** | Visibilidad del historial para el cliente | RF-PE-10 | US-032 |
-| **D14** | Autorización y presupuesto de AWS | — | US-072, US-081, US-082 |
+| ID | Decisión | Requisitos afectados | Afectaba a | Decisión ratificada |
+|---|---|---|---|---|
+| **D1** | Moneda y número de decimales | RN-IM-05, RN-IM-06 | US-003 (esquema) | **COP, sin decimales**. `NUMERIC(12,0)`, `RoundingMode.UNNECESSARY` |
+| **D2** | Reglas de cancelación del administrador | RN-CA-03, RN-CA-04 | US-036 | Admin cancela `PENDING` y `CONFIRMED`; motivo obligatorio en `CONFIRMED` |
+| **D3** | Cancelación repetida | RN-CA-06 | US-033 | `409 Conflict` (no idempotente) |
+| **D4** | Acceso a pedido ajeno: 404 o 403 | RN-SE-06 | US-022, US-032 | `404`, para no revelar la existencia del recurso |
+| **D5** | Límites de cantidad y de líneas | RN-DS-04 | US-030 | 1–20 unidades por línea, 10 líneas distintas por pedido |
+| **D6** | Variante desactivada con pedido abierto | RN-DS-03 | US-012, US-030 | No bloquea; manda el snapshot histórico |
+| **D7** | Cambio de precio con pedido abierto | RN-FH-02 | US-012 | Se cobra el precio del snapshot |
+| **D8** | Caducidad de pedidos `PENDING` | RN-ES-08 | Fuera del MVP | Sin caducidad automática; queda como deuda registrada |
+| **D9** | Importe recibido en la recogida | RN-PG-02, RN-PG-03 | US-037 | Debe coincidir con el total; si no, `422` |
+| **D10** | Ficha de cliente | RF-ID-01 | US-020 | Email + nombre + contraseña (≥ 10). Rol forzado a `CUSTOMER` |
+| **D11** | Si el registro devuelve token | RF-ID-05 | US-020 | `201` con el recurso del cliente, **sin** token |
+| **D12** | Algoritmo, caducidad y renovación del token | RN-SE-08 | US-021 | RS256, 15 minutos, sin refresh token |
+| **D13** | Visibilidad del historial para el cliente | RF-PE-10 | US-032 | Historial completo en el detalle del pedido |
+| **D14** | Autorización y presupuesto de AWS | — | US-072, US-081, US-082 | **Ningún recurso de AWS sin autorización escrita.** US-072, US-081 y US-082 siguen bloqueadas |
+| **D15** | Dónde vive el estado del pago | — | US-037 | Columnas `payment_status` y `payment_method` en `orders`; `cash_payments` es el registro del cobro |
+
+> D15 se detectó al implementar US-003 y se aplicó con su valor por defecto antes de esta aprobación. La tabla
+> `payments` **no existe**: el estado del pago son columnas de `orders`. Ver `decisions-pending.md` §D15.
 
 ---
 
@@ -319,14 +327,14 @@ Cada una tiene un valor por defecto (⚙️) aplicado en este documento.
 | | |
 |---|---|
 | Versión | 1.0 |
-| Estado | **Propuesta para aprobación** |
-| Decisiones ⚙️ pendientes | 14 (ver §11) |
-| Responsable | *(pendiente de firma)* |
-| Fecha de aprobación | *(pendiente)* |
+| Estado | ✅ **Aprobado** |
+| Decisiones pendientes | **0** — las 15 de §11 ratificadas el 2026-10-17 |
+| Responsable | Responsable del proyecto |
+| Fecha de aprobación | **2026-10-17** |
 
-**Al aprobar este documento:**
+**Al aprobar este documento:** ✅ hecho
 
-1. Se eliminan las marcas ⚙️ o se sustituyen por la decisión definitiva.
-2. Se registra la fecha en el apartado §12 y el estado pasa a **Aprobado**.
-3. El documento queda congelado: cualquier cambio posterior genera una versión nueva.
-4. Se desbloquea el Sprint 1.
+1. ✅ Se han eliminado las marcas ⚙️ y las decisiones definitivas constan en §11.
+2. ✅ Registrada la fecha en este apartado; el estado pasa a **Aprobado**.
+3. ✅ El documento queda **congelado**: cualquier cambio posterior genera `requirements-v1.1.md`.
+4. ✅ Sprint 1 desbloqueado (ejecutado y cerrado el 2026-10-11).
