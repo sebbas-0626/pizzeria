@@ -1,7 +1,8 @@
-package com.pizzeria.common.web;
+package com.pizzeria.shared.exception;
 
-import com.pizzeria.common.domain.DomainException;
-import com.pizzeria.common.domain.ErrorCode;
+import com.pizzeria.domain.exception.DomainException;
+import com.pizzeria.domain.exception.ErrorCode;
+import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;

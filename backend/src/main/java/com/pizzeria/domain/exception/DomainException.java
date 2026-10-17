@@ -1,4 +1,4 @@
-package com.pizzeria.common.domain;
+package com.pizzeria.domain.exception;
 
 /**
  * Raíz de las excepciones que expresan un problema del negocio previsto.

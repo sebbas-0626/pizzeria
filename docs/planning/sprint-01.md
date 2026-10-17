@@ -1,10 +1,24 @@
 # Sprint 01 — Fundamentos del proyecto y PostgreSQL
 
-> **Estado:** Planificado
+> **Estado:** Cerrado — US-001…US-006 en `Hecho` y US-080 cerrado en su parte de S1 (ver `backlog.md`)
 > **Objetivo:** un proyecto que compila, arranca en Docker, migra la base de datos y se valida en CI.
 > **Historias:** US-001, US-002, US-003, US-004, US-005, US-006, US-080 (parcial)
 > **Puntos:** 27
 > **Documento efímero:** al terminar, lo relevante se copia a `backlog.md`, `architecture.md` o un ADR. Este archivo es un registro, no una fuente de verdad.
+>
+> ⚠️ **Las rutas de archivo de este documento son las del 2026-10-11 y ya no existen.** Ese día el proyecto
+> estaba organizado por **módulo** (`com.pizzeria.common.domain`, `com.pizzeria.common.web`, …). El 2026-10-15
+> se sustituyó por **capas globales** ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md)) y las seis
+> clases existentes se movieron. Se deja el texto como registro de lo que se hizo, con la corrección de rutas
+> entre paréntesis donde aparece:
+
+> | Ruta registrada | Ruta vigente |
+> |---|---|
+> | `common/domain/DomainException.java`, `common/domain/ErrorCode.java` | `domain/exception/` |
+> | `common/config/ClockConfig.java`, `common/config/OpenApiConfig.java` | `infrastructure/config/` |
+> | `common/web/TraceIdFilter.java` | `infrastructure/adapter/in/web/` |
+> | `common/web/GlobalExceptionHandler.java` | `shared/exception/` |
+> | `common/web/` (resto de los tests web) | `infrastructure/adapter/in/web/` |
 
 ---
 
@@ -102,7 +116,7 @@ misma versión» se mantiene como norma del proyecto, y por eso hace falta el 21
 - [x] Añadir Maven Wrapper **3.10.0** (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`) con checksum SHA-256 fijado
 - [x] Generar **`.gitignore`** (el build ya genera `target/`, que no debe versionarse)
 - [x] Crear `com.pizzeria.PizzeriaApplication`
-- [x] Crear `common/domain/DomainException.java`
+- [x] Crear `common/domain/DomainException.java` — *ruta registrada; hoy `domain/exception/DomainException.java`*
 - [x] Crear `application.yml`, `application-local.yml`, `application-test.yml`
 - [x] Activar `spring-boot-starter-actuator` y exponer `health` (US-080 parcial)
 - [x] Escribir el test **ArchUnit** con las 5 reglas de dependencia
@@ -291,8 +305,8 @@ empezaría a fallar con errores de permisos.
 
 #### Tareas
 
-- [ ] `common/domain/DomainException` (abstracta, sin dependencias)
-- [ ] `common/web/GlobalExceptionHandler` con `ProblemDetail`
+- [ ] `common/domain/DomainException` (abstracta, sin dependencias) — *hoy `domain/exception/`*
+- [ ] `common/web/GlobalExceptionHandler` con `ProblemDetail` — *hoy `shared/exception/`*
 - [ ] Ampliar el problema con `code`, `timestamp` y `traceId`
 - [ ] Mapeo de: validación (400), autenticación (401), acceso denegado (403), no encontrado (404), conflicto (409), regla de negocio (422), fallo inesperado (500)
 - [ ] Catálogo de códigos de error documentado
@@ -399,8 +413,8 @@ backend/
 ├── Dockerfile                                    (US-070, S8)
 └── src/main/java/com/pizzeria/
     ├── PizzeriaApplication.java                  (nuevo)
-    ├── common/domain/DomainException.java        (nuevo)
-    └── common/web/GlobalExceptionHandler.java    (US-004)
+    ├── common/domain/DomainException.java        (nuevo)  ⚠️ hoy domain/exception/
+    └── common/web/GlobalExceptionHandler.java    (US-004)  ⚠️ hoy shared/exception/
 └── src/main/resources/
     ├── application.yml                           (nuevo)
     ├── application-local.yml                     (nuevo)
@@ -454,4 +468,6 @@ docs/planning/roadmap.md                          (S1 → Hecho)
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
-| — | — | — | Sprint no iniciado |
+| 2026-10-11 | US-001…US-006, US-080 (parcial) | Hecho | Cierre registrado en `backlog.md` con salida real de `./mvnw verify` |
+| 2026-10-15 | Estructura de paquetes | Hecho | Sustitución a capas globales ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md)) y puertos a `domain.port.out` ([ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)). Las seis clases de este sprint se movieron; `ArchitectureRulesTest` se reescribió (8 pruebas) |
+| 2026-10-17 | Rutas de este documento | Anotado | Marcadas como históricas con su equivalente vigente, sin reescribir el cuerpo: este archivo es un registro, no una fuente de verdad |

@@ -22,8 +22,8 @@
 | Regla | Valor |
 |---|---|
 | Paquete base | `com.pizzeria` |
-| Paquete por módulo, capas dentro | `com.pizzeria.orders.domain`, `…application`, `…adapters.in.web`, `…adapters.out.persistence` |
-| Un módulo por carpeta | `catalog`, `identity`, `orders`, `payments`, `common` |
+| Capas globales, no módulos | `com.pizzeria.domain`, `…application`, `…infrastructure`, `…shared` ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md)) |
+| Paquetes de primer nivel | **Sólo cuatro**: `domain`, `application`, `infrastructure`, `shared`. Un quinto es un fallo de build |
 | Imports | Explícitos. **Prohibido** el comodín `*` |
 | Tamaño de clase | Máximo ~300 líneas. Si se supera, se divide por responsabilidad |
 | Tamaño de método | Máximo ~15 líneas. Si supera, se extrae o se refactoriza |
@@ -233,7 +233,7 @@ System.out.println("pedido creado");
 ## 9. Concurrencia y tiempo
 
 - **Prohibido** `LocalDateTime.now()`, `Instant.now()` o `new Date()` dentro del dominio y de los casos de uso.
-- El tiempo se inyecta como `java.time.Clock` (puerto propio en `common.domain`, bean en `config`). Así los tests son deterministas sin ninguna librería extra.
+- El tiempo se inyecta como `java.time.Clock` (puerto propio en `domain.port.in`, bean en `infrastructure.config`). Así los tests son deterministas sin ninguna librería extra.
 - El identificador UUID lo genera la aplicación, no la base de datos: el agregado necesita su id antes de persistirse.
 
 ---

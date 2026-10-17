@@ -48,7 +48,7 @@ mandar el total, podría mandar `1`. El servidor calcula; el cliente sólo dice 
 | Obtener `ADMIN` | **Imposible por vía pública.** El registro siempre fuerza `CUSTOMER` (RN-SE-03) |
 
 Se documenta en el contrato con el esquema `bearerAuth`, declarado en
-[`OpenApiConfig`](../../backend/src/main/java/com/pizzeria/common/config/OpenApiConfig.java).
+[`OpenApiConfig`](../../backend/src/main/java/com/pizzeria/infrastructure/config/OpenApiConfig.java).
 
 **El esquema se declara, pero no se aplica a todas las operaciones.** Los endpoints públicos no llevan
 autenticación; cada endpoint protegido declara el suyo. Aplicarlo globalmente marcaría como privados
@@ -110,9 +110,9 @@ contrato y no cambia nunca.
 | `INTERNAL_ERROR` | 500 | Fallo no previsto. El mensaje es **siempre** genérico |
 
 El catálogo vive en
-[`ErrorCode`](../../backend/src/main/java/com/pizzeria/common/domain/ErrorCode.java); es la única
+[`ErrorCode`](../../backend/src/main/java/com/pizzeria/domain/exception/ErrorCode.java); es la única
 fuente y cada código se mapea a un estado en
-[`GlobalExceptionHandler`](../../backend/src/main/java/com/pizzeria/common/web/GlobalExceptionHandler.java).
+[`GlobalExceptionHandler`](../../backend/src/main/java/com/pizzeria/shared/exception/GlobalExceptionHandler.java).
 
 ### 3.3 Por qué 404 y no 403
 

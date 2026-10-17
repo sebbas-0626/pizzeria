@@ -1,10 +1,13 @@
 # Sprint 00 — Requisitos y diseño
 
-> **Estado:** En curso
+> **Estado:** ✅ **Aprobado** el 2026-10-17 · requisitos y decisiones cerrados
 > **Objetivo:** congelar las reglas de negocio y las decisiones técnicas antes de escribir una línea de código.
 > **Historias:** transversales (no son historias de código)
 > **Puntos:** —
 > **Documento efímero:** al terminar, lo relevante pasa a `requirements-v1.0.md`, a los ADR y al backlog.
+>
+> **Pendiente sin bloquear a nadie:** 6 ADR (0001, 0002, 0003, 0007, 0008, 0009) y las 8 páginas `.drawio`.
+> Los recoge como entregables US-044 en el Sprint 05.
 
 ---
 
@@ -35,12 +38,12 @@ produce las decisiones; los siguientes las ejecutan.
 
 ### 1.3 Arquitectura
 
-- [x] Definir arquitectura hexagonal por módulo ([ADR-0001](docs/adr/0010-versiones-de-java-y-spring-boot.md) como referencia de stack)
+- [x] Definir arquitectura hexagonal ( monolito modular, ADR-0008 — *pendiente de redactar*; stack en [ADR-0010](../adr/0010-versiones-de-java-y-spring-boot.md))
 - [x] Definir reglas de dependencia verificables ([`spring-conventions.md`](../development/spring-conventions.md) §1)
 - [x] Decidir la frontera transaccional
 - [x] Decidir la separación entre dominio y JPA
-- [x] Decidir el estilo de paquetes (módulo primero)
-- [x] Decidir repositorios como puertos de salida
+- [x] Decidir el estilo de paquetes (módulo primero) — ⚠️ **decisión sustituida** el 2026-10-15 por [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) (capas globales); ver nota de sustitución más abajo
+- [x] Decidir repositorios como puertos de salida — ⚠️ **sustituido** el 2026-10-15 por [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md) (`domain.port.out`)
 - [x] Fijar el stack y sus versiones ([ADR-0010](../adr/0010-versiones-de-java-y-spring-boot.md) — **Java 21 LTS**)
 - [ ] Redactar los ADR de arquitectura pendientes (§4)
 
@@ -104,20 +107,24 @@ produce las decisiones; los siguientes las ejecutan.
 
 ## 4. ADR pendientes de redactar en este sprint
 
-| ADR | Título | Decisión |
-|---|---|---|
-| ADR-0001 | Índices de plantilla del proyecto | Nomenclatura de ADR, revisiones de plantilla |
-| ADR-0002 | Transacciones en la capa de aplicación | Frontera transaccional y alternativa más pura rechazada |
-| ADR-0003 | Dominio separado de JPA | Dos modelos y mappers, frente a entidad JPA rica |
-| ADR-0004 | Paquetes por módulo | Módulo primero frente a capas globales |
-| ADR-0005 | Repositorios como puertos de salida | Dónde se declaran las interfaces |
-| ADR-0006 | Floci como emulador AWS | Elección del emulador local y sus límites |
-| ADR-0007 | JWT con RS256 y claves por entorno | Algoritmo y gestión de claves |
-| ADR-0008 | Monolito modular antes que microservicios | Justificación del monolito |
-| ADR-0009 | Sin compilación nativa GraalVM en el MVP | Exclusión de AOT |
+| ADR | Título | Decisión | Estado |
+|---|---|---|---|
+| ADR-0001 | Índices de plantilla del proyecto | Nomenclatura de ADR, revisiones de plantilla | Pendiente |
+| ADR-0002 | Transacciones en la capa de aplicación | Frontera transaccional y alternativa más pura rechazada | Pendiente |
+| ADR-0003 | Dominio separado de JPA | Dos modelos y mappers, frente a entidad JPA rica | Pendiente |
+| ADR-0004 | **Paquetes por capas, no por módulo** | Capas globales frente a módulo primero | ✅ [Redactada y aceptada](../adr/0004-estructura-de-paquetes-por-capas.md) — el título previsto era «Paquetes por módulo» |
+| ADR-0005 | **Los puertos se declaran en el dominio** | `domain.port.out` frente a `application.port.out` | ✅ [Redactada y aceptada](../adr/0005-los-puertos-se-declaran-en-el-dominio.md) |
+| ADR-0006 | Floci como emulador AWS | Elección del emulador local y sus límites | ✅ [Redactada](../adr/0006-floci-como-emulador-aws.md) |
+| ADR-0007 | JWT con RS256 y claves por entorno | Algoritmo y gestión de claves | Pendiente |
+| ADR-0008 | Monolito modular antes que microservicios | Justificación del monolito | Pendiente |
+| ADR-0009 | Sin compilación nativa GraalVM en el MVP | Exclusión de AOT | Pendiente |
 
 > Estos ADR están planificados y referenciados desde `AGENTS.md` y los documentos de convenciones.
-> Su redacción es trabajo de S0; hasta entonces, las decisiones seleo directamente en los documentos.
+> Su redacción es trabajo de S0; hasta entonces, las decisiones se leen directamente en los documentos.
+>
+> **Dos de ellos se desviaron de lo previsto.** ADR-0004 y ADR-0005 no eligieron el módulo primero ni
+> `application.port.out`, sino **capas globales** y `domain.port.out` ([mapa de sustitución](../adr/0004-estructura-de-paquetes-por-capas.md) §5).
+> Una ADR aceptada no se edita: se sustituye, y eso es exactamente lo que ocurrió.
 
 ---
 
@@ -153,3 +160,7 @@ produce las decisiones; los siguientes las ejecutan.
 | 2026-10-11 | ADR de arquitectura 0001–0009 | Pendiente | — |
 | 2026-10-11 | Diagramas `.drawio` | Pendiente | — |
 | 2026-10-11 | Repositorio Git inicializado | Pendiente | — |
+| 2026-10-15 | ADR de arquitectura 0001–0009 | En curso | 0004, 0005 y 0006 redactadas y aceptadas |
+| 2026-10-15 | Decisiones de estructura de paquetes **sustituidas** | Hecho | El «módulo primero» de §1.3 y el ADR-0004 previsto se sustituyen por [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) (**capas globales**) y [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md) (puertos en `domain.port.out`). Sin código de negocio afectado |
+| 2026-10-17 | `requirements-v1.0.md` **aprobado y congelado** | Hecho | El responsable ratifica D1–D15 con sus valores por defecto; se eliminan las marcas ⚙️. Cierra el criterio de salida de S0 |
+| 2026-10-17 | `sprint-02`…`sprint-07` corregidos a capas globales | Hecho | Documentos de planificación adaptados a la estructura vigente |

@@ -65,7 +65,7 @@
         </dependency>
 
         <!-- ==================== persistencia ==================== -->
-        <!-- JPA sólo se usa en adapters.out.persistence. Nunca en el dominio (ADR-0003). -->
+        <!-- JPA sólo se usa en infrastructure.adapter.out.persistence. Nunca en el dominio (ADR-0003). -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>

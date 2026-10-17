@@ -5,6 +5,11 @@
 > **Historias:** US-050, US-051, US-052
 > **Puntos:** 21
 > **Documento efímero:** al terminar, lo relevante pasa al backlog y a `architecture.md`.
+>
+> **Estructura de paquetes: capas globales**, según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md).
+> Este documento se planificó con `catalog/application/port/out/ImageStorage` y `adapters/out/storage/`;
+> se corrigió el 2026-10-17: el puerto va en `domain/port/out/` y los adaptadores en
+> `infrastructure/adapter/out/storage/`.
 
 ---
 
@@ -33,8 +38,8 @@ Si las pruebas de humo requieren el emulador para arrancar, la arquitectura est�
 
 ### Tareas
 
-- [ ] `catalog/application/port/out/ImageStorage.java` — interfaz con `store`, `presign` y `delete`
-- [ ] Implementación por defecto: `NoOpImageStorage` o `LocalFileSystemImageStorage`
+- [ ] `domain/port/out/ImageStoragePort.java` — interfaz con `store`, `presign` y `delete`
+- [ ] Implementación por defecto: `NoOpImageStorageAdapter` o `LocalFileSystemImageStorageAdapter`, en `infrastructure/adapter/out/storage/`
 - [ ] Configuración por perfil: local (ficheros) / emulador (S3) / **sin AWS** (por defecto)
 - [ ] Test ArchUnit que prohíbe `software.amazon.awssdk` en `domain` y en `application`
 
@@ -42,7 +47,7 @@ Si las pruebas de humo requieren el emulador para arrancar, la arquitectura est�
 
 | # | Criterio | Verificación |
 |---|---|---|
-| 1 | El puerto está en `application.port.out` | Inspección |
+| 1 | El puerto está en `domain.port.out` | Inspección |
 | 2 | El perfil por defecto **no** toca ningún servicio externo | Arranque sin red |
 | 3 | **El backend arranca con las variables de AWS ausentes** | Prueba de humo |
 | 4 | Ningún tipo del SDK de AWS aparece en `domain` ni en `application` | Test ArchUnit |
@@ -50,8 +55,8 @@ Si las pruebas de humo requieren el emulador para arrancar, la arquitectura est�
 
 ### La pregunta que esta historia responde
 
-> *«¿Dónde meto la llamada a S3?»* — Respuesta: en `adapters.out.storage`, implementando un puerto que el
-> caso de uso consume. Si algún día el almacenamiento cambia a otro proveedor, el caso de uso no cambia.
+> *«¿Dónde meto la llamada a S3?»* — Respuesta: en `infrastructure/adapter/out/storage/`, implementando un puerto
+> que el caso de uso consume. Si algún día el almacenamiento cambia a otro proveedor, el caso de uso no cambia.
 
 ---
 
@@ -59,7 +64,7 @@ Si las pruebas de humo requieren el emulador para arrancar, la arquitectura est�
 
 ### Tareas
 
-- [ ] `adapters/out/storage/S3ImageStorage.java` con el SDK v2
+- [ ] `infrastructure/adapter/out/storage/S3ImageStorageAdapter.java` con el SDK v2
 - [ ] Creación idempotente del bucket al arrancar (sólo en `local`)
 - [ ] Configuración de `endpointOverride` por variable de entorno
 - [ ] Credenciales de prueba; **ninguna** real en el repositorio
@@ -134,15 +139,21 @@ El criterio 7 documenta y prueba esa decisión.
 ## 6. Archivos creados o modificados
 
 ```text
-catalog/
-├── application/port/out/ImageStorage.java
-└── adapters/out/storage/S3ImageStorage.java, NoOpImageStorage.java, S3BucketInitializer.java
+backend/src/main/java/com/pizzeria/
+├── domain/port/out/            ImageStoragePort
+└── infrastructure/
+    ├── adapter/out/storage/    S3ImageStorageAdapter, NoOpImageStorageAdapter,
+    │                           LocalFileSystemImageStorageAdapter, S3BucketInitializer
+    └── config/                 S3Properties (@ConfigurationProperties), S3Config
 
-config/         S3Properties (@ConfigurationProperties)
-infra/local/    docker-compose.yml (servicio floci added)
+infra/local/    docker-compose.yml (servicio floci añadido)
 scripts/        init-bucket.ps1 (opcional)
 docs/adr/0006-floci-como-emulador-aws.md
 ```
+
+> El SDK de AWS v2 sólo puede aparecer en `infrastructure` —en `adapter/out/storage/` y en `config/`—. Ni
+> `domain` ni `application` lo ven: lo comprueban `elDominioNoDependeDeFrameworks` y
+> `laAplicacionNoDependeDeInfrastructure` ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) §3).
 
 ---
 
@@ -185,4 +196,5 @@ docs/adr/0006-floci-como-emulador-aws.md
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
+| 2026-10-17 | — | — | Rutas corregidas a capas globales ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)): puerto en `domain/port/out/ImageStoragePort`, adaptadores en `infrastructure/adapter/out/storage/`, configuración en `infrastructure/config/`. Sin historia empezada. |
 | — | — | — | Sprint no iniciado |

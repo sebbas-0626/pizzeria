@@ -133,21 +133,28 @@ Tabla completa con la justificación de cada versión:
 
 ## Arquitectura
 
-Monolito modular con arquitectura hexagonal. Cada módulo (`catalog`, `identity`, `orders`,
-`payments`, `common`) tiene sus capas dentro, y las dependencias apuntan en un solo sentido:
+Monolito con arquitectura hexagonal por capas. Las dependencias apuntan en un solo sentido:
 
 ```text
-adapters.in.web  →  application  →  domain
-adapters.out.persistence ───────────↗
+infrastructure  ──►  application  ──►  domain
+   (conoce a todos)    (orquesta)      (no conoce a nadie)
+
+shared   capa transversal: traduce, registra, correlaciona
 ```
+
+Bajo `com.pizzeria` sólo existen cuatro paquetes de primer nivel: `domain`, `application`,
+`infrastructure` y `shared` ([ADR-0004](docs/adr/0004-estructura-de-paquetes-por-capas.md)).
+Los puertos se declaran en `domain.port` y los implementa `infrastructure.adapter.out`
+([ADR-0005](docs/adr/0005-los-puertos-se-declaran-en-el-dominio.md)).
 
 **Reglas que el build verifica con ArchUnit**, no sólo en el documento:
 
 | Capa | Prohibido |
 |---|---|
 | `domain` | Spring, JPA, Jackson, SDK de AWS, Lombok |
-| `application` | Spring Web, Spring Data, SDK de AWS |
-| `adapters.in.web` | `adapters.out`, entidades JPA |
+| `application` | `infrastructure`, `shared`, Spring Web, Spring Data, SDK de AWS |
+| `infrastructure.adapter.in.web` | `infrastructure.adapter.out`, entidades JPA |
+| `shared` | `application`, `domain.model`, `domain.port`, adaptadores de salida |
 
 Detalle: [`docs/development/spring-conventions.md`](docs/development/spring-conventions.md)
 
@@ -160,6 +167,7 @@ Detalle: [`docs/development/spring-conventions.md`](docs/development/spring-conv
 | [`docs/requirements/requirements-v1.0.md`](docs/requirements/requirements-v1.0.md) | Las reglas de negocio. **Fuente de verdad nº1** |
 | [`docs/adr/`](docs/adr) | Por qué se eligió cada tecnología |
 | [`docs/architecture/architecture.md`](docs/architecture/architecture.md) | Stack con versiones y diseño de capas |
+| [`docs/architecture/estructuras.md`](docs/architecture/estructuras.md) | Las dos estructuras hexagonales posibles y la arquitectura global del proyecto |
 | [`docs/architecture/api-contract.md`](docs/architecture/api-contract.md) | Contrato de la API: errores, autenticación, códigos |
 | [`docs/development/conventions.md`](docs/development/conventions.md) | Cómo se escribe el código |
 | [`docs/planning/`](docs/planning) | Qué falta y en qué orden |

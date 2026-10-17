@@ -2,7 +2,7 @@
 
 > **Fuente de verdad del estado de las historias.** Documento vivo: se actualiza al cerrar cada historia.
 > Formato de estados: `Pendiente` · `En curso` · `En revisión` · `Hecho` · `Bloqueada` · `Descartada`
-> Última actualización: **2026-10-11**
+> Última actualización: **2026-10-17**
 
 ---
 
@@ -156,7 +156,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   2. `MethodArgumentNotValidException` → 400 con lista campo/mensaje.
   3. Ningún mensaje incluye traza de pila en producción.
   4. Existe un test por cada tipo de excepción mapeada.
-- **Tareas técnicas:** `common/domain/DomainException`, `common/web/GlobalExceptionHandler`, catálogo de códigos.
+- **Tareas técnicas:** `domain/exception/DomainException`, `shared/exception/GlobalExceptionHandler`, catálogo de códigos. *(Rutas vigentes tras [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md); en el momento de la historia eran `common/domain/` y `common/web/`.)*
 - **Pruebas requeridas:** `@WebMvcTest` con controlador de pruebas y 6–8 escenarios.
 - **Estado:** **Hecho** el 2026-10-11. Verificación con salida real:
   1. ✅ Todo error sale como `application/problem+json` con `code` estable, más `timestamp` y `traceId`.
@@ -372,7 +372,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
   8. Cada `order_item` guarda la foto histórica: `pizza_name`, `size`, `unit_price`.
   9. Se inserta una fila en `order_status_history` (null → PENDING) con el actor.
   10. Dos variantes iguales en el mismo pedido se fusionan en una única línea.
-- **Tareas técnicas:** agregado `Order` + `OrderItem` + `OrderStatus` (máquina de estados), `Money`, `PlaceOrderUseCase` (`@Transactional`), puerto `PricingCatalog`, `OrderController`, `CreateOrderRequest`, mappers, repositorios JPA.
+- **Tareas técnicas:** agregado `Order` + `OrderItem` + `OrderStatus` (máquina de estados), `Money` en `domain/model/vo/`, `PlaceOrderUseCase` (`application/usecase`) + `PlaceOrderService` (`application/service`, `@Transactional`), puertos `OrderRepositoryPort` y `PricingCatalogPort` en `domain/port/out/`, `OrderController` en `infrastructure/adapter/in/web/`, `CreateOrderRequest`, mappers y entidades JPA en `infrastructure/adapter/out/persistence/`.
 - **Pruebas requeridas:** unitarias del agregado (todos los invariantes, incluidos los negativos); unitarias del caso de uso con dobles; web (401/403/400/422/201 y el caso del precio inyectado); integración con Testcontainers (persistencia, tipos monetarios, fusión de líneas).
 - **Riesgos:** la historia más grande del backlog (13 puntos). Se divide internamente en subtareas y **no se toca más de un concepto por sesión**.
 
@@ -471,6 +471,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 #### US-044 — Documentación y diagramas del sistema
 
 - **Criterios de aceptación:** las 8 páginas `.drawio` más sus SVG exportados; ADR-0001…ADR-0010 redactados; `README.md` con qué es el proyecto, cómo arrancarlo, el stack con versiones justificadas, un diagrama embebido y los endpoints principales; `requirements-v1.0.md` aprobado por el responsable.
+  - ✅ **Criterio de aprobación cumplido el 2026-10-17**: `requirements-v1.0.md` aprobado y congelado por el responsable del proyecto, con las 15 decisiones ratificadas. Este criterio ya no es trabajo pendiente de US-044; queda registrarlo como cumplido. **Pendiente:** los 6 ADR que faltan (0001, 0002, 0003, 0007, 0008, 0009) y los diagramas.
 
 #### US-045 — Contrato de API congelado
 
@@ -486,7 +487,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 | US-051 | Adaptador S3 verificado contra el emulador | S6 | Media | US-050 | 8 | Pendiente |
 | US-052 | Imágenes de pizza gestionadas por el administrador | S6 | Media | US-051, US-011 | 8 | Pendiente |
 
-- **US-050:** puerto `ImageStorage` (`store` / `presign` / `delete`) con adaptador por defecto local o "no-op" activo **sin** AWS; test ArchUnit que prohíbe el SDK de AWS en `domain` y `application`; el backend debe arrancar sin AWS.
+- **US-050:** puerto `ImageStoragePort` (`store` / `presign` / `delete`) en `domain/port/out/` con adaptador por defecto local o "no-op" activo **sin** AWS; test ArchUnit que prohíbe el SDK de AWS en `domain` y `application`; el backend debe arrancar sin AWS.
 - **US-051:** bucket creado idempotentemente al arrancar en el perfil local; `PUT`, `GET` y URL prefirmada funcionando contra **Floci**; test de integración con Testcontainers; `endpointOverride` por variable de entorno; caducidad de las URLs prefirmadas configurable.
 - **US-052:** `POST /api/v1/admin/pizzas/{id}/image` (multipart) → clave del objeto; validación de tipo MIME y tamaño máximo (5 MB) rechazando ejecutables; reemplazo de la imagen anterior; el catálogo público devuelve `imageUrl` prefirmado; sin ADMIN → 403; **el cliente no puede indicar una URL arbitraria** (evita SSRF).
 
@@ -518,6 +519,7 @@ Objetivo: un proyecto que compila, arranca, se migra y se valida en un solo coma
 
 - **US-070:** imagen multi-stage con tag fijo; ejecución como usuario no root; sin fuentes ni credenciales; `.dockerignore` correcto; test de humo arrancando contra PostgreSQL de pruebas. **Fuera de alcance: compilación nativa GraalVM** ([ADR-0009](../adr/0009-sin-nativo-graalvm-en-el-mvp.md)).
 - **US-071:** jobs `verify` → `docker build` → escaneo de imagen → publicación en ECR **sólo con autorización**; artefactos JAR, imagen y OpenAPI.
+  - **El ensayo completo es posible en local** (documentado el 2026-10-11): Floci emula ECR con un **registro OCI real** detrás, así que `docker push` funciona contra él sin configurar el demonio. Y emula **EC2** lanzando un contenedor Docker real por instancia, con límites de CPU y memoria. Eso permite probar el ciclo `build → push → lanzar → hablar con S3/SQS` **antes** de tocar AWS real. Ver [`docs/development/aws-local.md`](../development/aws-local.md) §5. Sigue exigiendo autorización para cualquier recurso real.
 - **US-072:** presupuesto y alarma de coste **antes** de crear nada; rol de IAM de mínimo privilegio y sin claves estáticas en el repositorio; script de destrucción documentado y ejecutado al terminar. **No se ejecuta sin autorización expresa del responsable.**
 - **US-073:** ADR con coste aproximado, carga operativa, escalado y criterio de migración. **Sin crear recursos.**
 
@@ -552,7 +554,7 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 | Pasarelas de pago | Sólo efectivo en el MVP |
 | Módulo de cocina (pantalla de producción) | Fuera del alcance |
 | Múltiples sedes | Una sola sede |
-| Microservicios | Monolito modular ([ADR-0008](../adr/0008-monolito-modular-antes-que-microservicios.md)) |
+| Microservicios | Monolito ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md)) |
 | Rate limiting | Se resuelve en el borde; anotado como deuda |
 | Clave de idempotencia en creación de pedido | Anotado como deuda |
 | Caducidad automática de pedidos `PENDING` | Sin módulo de temporizadores en el MVP |
@@ -563,6 +565,9 @@ Documentadas para que no se pierdan, **explícitamente no planificadas**:
 
 | Fecha | Cambio |
 |---|---|
+| 2026-10-17 | **`requirements-v1.0.md` aprobado y congelado** por el responsable del proyecto. Se eliminaron las 12 marcas ⚙️ de las reglas de negocio y se ratificaron con sus valores por defecto las 15 decisiones (D1–D15), que en `decisions-pending.md` pasan a *Resuelta*. §11 pasó de «Decisiones pendientes que bloquean la aprobación» a «Decisiones ratificadas en la aprobación», con la decisión definitiva de cada una; §12 registra responsable y fecha. **Ninguna historia queda bloqueada por ambigüedad.** D14 sigue siendo una restricción permanente: US-072, US-081 y US-082 no se ejecutan sin autorización escrita para AWS. S0 pasa de *En curso* a *Aprobado* en `roadmap.md`, con pendientes que no bloquean (6 ADR y los diagramas, ambos de US-044). El criterio «`requirements-v1.0.md` aprobado» de US-044 queda cumplido. |
+| 2026-10-17 | **Documentos de planificación adaptados a las capas globales.** El cambio de estructura del 2026-10-15 había actualizado `AGENTS.md`, `architecture.md` y las convenciones, pero **no** los documentos de planificación, que seguían indicando `catalog/domain/…`, `identity/domain/…`, `orders/application/port/out/…` y `adapters/out/storage`. Corregidos `sprint-02` (completo, es el sprint activo), `sprint-03`, `sprint-04`, `sprint-06` y `sprint-07`; `sprint-00` y `sprint-01` anotados como registro histórico sin reescribir su cuerpo. Cambios de contenido, no sólo de rutas: **los puertos pasan a nombre `…Port`** (`PizzaCatalogPort`, `PricingCatalogPort`, `OrderRepositoryPort`, `PaymentRepositoryPort`, `CustomerRepositoryPort`, `PasswordEncoderPort`, `JwtTokenIssuerPort`, `ImageStoragePort`), las implementaciones de caso de uso pasan a `application/service/*Service`, y `PageRequest`/`PageResponse` a `application/dto` porque `application` **no puede importar `shared`** (`laAplicacionNoDependeDeInfrastructure`). Corregidos además enlaces rotos a clases movidas en `api-contract.md` (2) y `spring-conventions.md` (1), en `requirements-v1.0.md` (2), en `db/migration/README.md` (3), un enlace roto a ADR en `sprint-00.md`, un carácter corrupto (`U+3002`) en `adr/0005-…md` y los estados de S0 y S1 en `roadmap.md`. Sin cambios en el código. |
+| 2026-10-15 | **Cambio de estructura de paquetes.** Sustituye al «paquete por módulo» de `AGENTS.md` §3.1. Se aplica **capas globales**: `com.pizzeria.{domain, application, infrastructure, shared}`. Registrado en [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md) y [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md) (los puertos pasan de `application.port.out` a `domain.port`). Consecuencia aceptada: **se pierde el aislamiento entre módulos** (`catalog`, `identity`, `orders`, `payments`), que era una barrera del compilador. Las 6 clases existentes se han movido, `ArchitectureRulesTest` se ha reescrito con 8 pruebas (6 reglas de capa + 2 guardas, una de ellas nueva: `noHayPaquetesHuerfanos`) y se han actualizado `AGENTS.md`, `architecture.md`, `spring-conventions.md`, `conventions.md`, `aws-local.md`, `README.md` y `pom.xml`. Sin código de negocio afectado: a esta fecha no existe ninguna clase de `catalog`, `identity`, `orders` ni `payments`. |
 | 2026-10-11 | US-006 → **Hecho**. `ci.yml` (verificar, secretos, compose), `ci-integration.yml`, `dependabot.yml` y `README` con distintivos. `WorkflowFilesTest` valida los tres ficheros con SnakeYAML. US-080 parcial de S1: `/actuator/env` no expuesto y sólo `health`/`info`/`metrics` públicos. |
 | 2026-10-11 | US-005 → **Hecho**. OpenAPI publicado sólo en `local` y verificado con peticiones HTTP reales: 404 sin perfil, 200 con `local`, y el esquema `bearerAuth` leído del JSON generado. `api-contract.md` creado con el catálogo de 14 códigos de error. |
 | 2026-10-11 | US-004 → **Hecho**. Errores en `problem+json` con `code` estable, `timestamp` y `traceId`, y 9 escenarios de prueba. El estado HTTP lo decide una tabla, no la excepción. `@WebMvcTest` y `ObjectMapper` han cambiado de paquete en Spring Boot 4. |
