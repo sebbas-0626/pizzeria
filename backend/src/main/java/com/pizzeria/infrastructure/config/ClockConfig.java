@@ -1,4 +1,4 @@
-package com.pizzeria.common.config;
+package com.pizzeria.infrastructure.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

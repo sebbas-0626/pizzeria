@@ -1,6 +1,8 @@
-package com.pizzeria.common.web;
+package com.pizzeria.shared.exception;
 
-import com.pizzeria.common.config.ClockConfig;
+import com.pizzeria.infrastructure.adapter.in.web.ControladorDePruebas;
+import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
+import com.pizzeria.infrastructure.config.ClockConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

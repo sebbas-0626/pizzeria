@@ -1,4 +1,4 @@
-package com.pizzeria.common.web;
+package com.pizzeria.infrastructure.adapter.in.web;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

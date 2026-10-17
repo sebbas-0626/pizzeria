@@ -1,7 +1,7 @@
-package com.pizzeria.common.web;
+package com.pizzeria.infrastructure.adapter.in.web;
 
-import com.pizzeria.common.domain.DomainException;
-import com.pizzeria.common.domain.ErrorCode;
+import com.pizzeria.domain.exception.DomainException;
+import com.pizzeria.domain.exception.ErrorCode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/v1/_pruebas")
-class ControladorDePruebas {
+public class ControladorDePruebas {
 
     @PostMapping("/validacion")
     void fallaLaValidacionDelCuerpo(@Valid @RequestBody PeticionDePrueba peticion) {

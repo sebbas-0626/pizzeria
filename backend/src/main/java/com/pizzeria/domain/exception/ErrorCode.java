@@ -1,4 +1,4 @@
-package com.pizzeria.common.domain;
+package com.pizzeria.domain.exception;
 
 /**
  * Catálogo de códigos de error estables del contrato público.
@@ -8,7 +8,7 @@ package com.pizzeria.common.domain;
  * excepción: un typo en un literal sería invisible en las pruebas y llegaría al cliente.
  *
  * <p>Formato: {@code MODULO_SITUACION} en mayúsculas, en inglés, sin el número HTTP. El estado lo decide
- * la capa web ({@code common.web.GlobalExceptionHandler}), no el dominio: el dominio no sabe qué es un
+ * la capa web ({@code shared.exception.GlobalExceptionHandler}), no el dominio: el dominio no sabe qué es un
  * 404.
  *
  * <p>Reglas al añadir uno:

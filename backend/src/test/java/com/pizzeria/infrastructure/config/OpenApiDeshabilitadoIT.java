@@ -1,4 +1,4 @@
-package com.pizzeria.common.config;
+package com.pizzeria.infrastructure.config;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
