@@ -44,6 +44,11 @@
         <!-- ==================== Versiones propias ==================== -->
         <!-- Sólo lo que Spring Boot NO gestiona. -->
         <archunit.version>1.5.1</archunit.version>
+        <!-- MapStruct no viene en el BOM de Spring Boot: se fija aquí para que la
+             dependencia y el procesador de anotaciones usen siempre la misma versión.
+             Versión 1.6.3: compatible con Java 21 y sin dependencia de Lombok, que
+             está prohibido (conventions.md §2). -->
+        <mapstruct.version>1.6.3</mapstruct.version>
         <springdoc.version>3.1.1</springdoc.version>
 
         <!-- Construcción reproducible: misma entrada, mismo JAR. -->
@@ -105,6 +110,17 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- ==================== mapeo ==================== -->
+        <!-- MapStruct genera en tiempo de compilación las implementaciones de las
+             interfaces Mapper, sin Lombok y sin código escrito a mano. El procesador
+             está declarado en maven-compiler-plugin: ver la nota de annotationProcessorPaths.
+             Sólo se usa en la capa infrastructure; el dominio no se mapea. -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
         <!-- ==================== pruebas ==================== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -163,6 +179,9 @@
              Verificado el 2026-10-11: springdoc 3.1.1 se construye sobre Spring Boot 4.1.0,
              compatible con el 4.1.1 del proyecto. El US-005 activará los endpoints por
              perfil; aquí sólo se añade la dependencia para cerrar el spike de US-001. -->
+        <!-- TODO(US-002): verificar que springdoc 3.1.1 funciona con Spring Boot 4.1.1.
+             Si falla, evaluar bajar a Spring Boot 4.1.0 o esperar springdoc 3.1.x.
+             Documentar decisión en ADR-0011. -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -194,6 +213,33 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!--
+              MapStruct no es sólo una dependencia: sin su procesador de anotaciones
+              declarado aquí, el build compila sin error pero NO genera ninguna
+              implementación de las interfaces Mapper. El fallo aparece después, al
+              arrancar la aplicación, como un NoClassDefFoundError o un bean ausente.
+
+              Con annotationProcessorPaths el procesador queda explícito y aislado: sólo
+              se ejecutan los procesadores que aquí se indican, sin que Maven descubra
+              por su cuenta los que encuentre en el classpath. Es además la forma de
+              impedir que Lombok se cuele de nuevo como procesador, que está prohibido.
+
+              Sin <version>: el BOM de spring-boot-starter-parent la gestiona.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
 
             <!--

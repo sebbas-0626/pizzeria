@@ -1,5 +1,5 @@
 # Perfil de desarrollo local. Se activa con:
-#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+#   ./scripts/dev-up.ps1          (dentro del laboratorio, es como se usa)
 #
 # Las credenciales NUNCA están aquí: llegan por variable de entorno desde el archivo .env,
 # que está en .gitignore. Si la variable falta, la aplicación falla al arrancar en lugar de
@@ -7,7 +7,27 @@
 
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:pizzeria}
+# SIN VALOR POR DEFECTO PARA EL HOST, a propósito, y es lo más importante de este archivo.
+    #
+    # El laboratorio local usa un PostgreSQL DENTRO de un contenedor, en la red de Compose, y su
+    # nombre es `db`. Este perfil se activa dentro de ese contenedor, donde Compose inyecta
+    # POSTGRES_HOST=db y POSTGRES_PORT=5432.
+    #
+    # Antes ponía `${POSTGRES_HOST:localhost}` y `${POSTGRES_PORT:5432}`. Con esos valores por
+    # defecto, arrancar la aplicación FUERA de Docker (un `spring-boot:run` a mano, que es lo
+    # primero que se prueba cuando algo falla) caía en `localhost:5432` sin decir nada. En una
+    # máquina con PostgreSQL instalado, eso significa conectarse AL OTRO servidor, uno que no tiene
+    # el esquema de la aplicación, y el error que sale es «autenticación password falló»: parece un
+    # problema de credenciales y es un problema de destino.
+    #
+    # Qué hace ahora, comprobado el 2026-10-17 arrancando sin las variables: la aplicación NO
+    # arranca. La URL se queda con el marcador sin sustituir
+    # (`jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/pizzeria`), el driver la rechaza y el
+    # arranque falla con `Driver org.postgresql.Driver claims to not accept jdbcUrl`. El mensaje no
+    # es bonito ni nombra la variable que falta, pero el resultado es el que importa: es imposible
+    # arrancar contra una base de datos equivocada. Si algún día se quiere un mensaje mejor, se
+    # resuelve con un EnvironmentPostProcessor, no volviendo a poner un valor por defecto.
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB:pizzeria}
     # Sin valor por defecto a propósito: si falta, el error lo dice claramente.
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}

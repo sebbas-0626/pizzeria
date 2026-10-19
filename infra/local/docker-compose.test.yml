@@ -16,13 +16,31 @@
 # A diferencia del entorno de desarrollo, aquí SÍ se publica el puerto de PostgreSQL:
 # lo necesita un proceso que corre fuera de Compose (por ejemplo, un cliente SQL o una
 # herramienta de inspección). En desarrollo no se publica por criterio de US-002.
+#
+# El puerto del host (5435) lo elige quien lo usa: ver el comentario en db.ports.
 
 services:
 
   db:
     volumes: !reset []
     ports:
-      - "5433:5432"
+      # Puerto del host ELEGIDO A MANO, no por defecto.
+      #
+      # 5432 queda descartado porque lo tiene el PostgreSQL instalado en Windows, y conectar
+      # DBeaver al servidor equivocado no se parece en nada a un fallo de conexión: parece que
+      # todo funciona. Por eso el puerto se fija en un valor que se ha comprobado libre:
+      #
+      #     Get-NetTCPConnection -LocalPort 5435 -State Listen
+      #
+      # Sin salida significa libre. Ojo con el detalle de este comando: con un contenedor de
+      # Docker levantado aparece `wslrelay` y `com.docker.backend` en el puerto publicado, porque
+      # así es como Docker Desktop reenvía el tráfico en Windows. **Eso NO significa que haya otro
+      # servicio en el puerto**: es el reenvío del propio contenedor. Se comprueba parándolo
+      # (`docker stop pizzeria-db-1`) y mirando otra vez: si el puerto queda libre, era nuestro.
+      #
+      # Si algún día lo ocupa otra cosa de verdad, el síntoma será «la conexión se niega», que es
+      # claro. Para cambiarlo, es esta línea y las referencias de docs/development/entorno-local.md.
+      - "5435:5432"
 
   app:
     command:

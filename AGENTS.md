@@ -159,6 +159,7 @@ Detalle completo en [`docs/development/spring-conventions.md`](docs/development/
 
 - Una historia (o subtarea acotada) por sesión.
 - Código + pruebas + migración + documentación, en el mismo cambio.
+- **Endpoint nuevo o endpoint cambiado → su petición en `api/bruno/pizzeria.postman_collection.json`, en el mismo cambio.** Es la colección de Postman para probar la API a mano y crece con la API: carpeta por recurso (`Sistema`, `Catálogo de pizzas`, …), una petición por caso con nombre corto en español, descripción de una línea y la respuesta real guardada como ejemplo. Sin ella, un endpoint no está terminado: `ColeccionPostmanTest.todoEndpointImplementadoTieneSuPeticion` falla en cuanto el contrato lo marca como `Hecho`.
 - Ejecutar `./mvnw verify` y **reportar la salida real**.
 - Prohibido simular: `TODO`, `@Disabled`, `return null`, mock fijado o feature flag que finja comportamiento se declara como pendiente, nunca como terminado.
 - No sobrescribir ni borrar trabajo previo sin revisarlo y pedir autorización.
@@ -183,6 +184,8 @@ Detalle completo en [`docs/development/spring-conventions.md`](docs/development/
 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` | Arranque local |
 | `docker compose -f infra/local/docker-compose.yml up -d --build` | Laboratorio local (Postgres + backend + emulador) |
 | `pwsh scripts/smoke-test.ps1` | Humo contra la app levantada |
+| `pwsh scripts/dev-up.ps1 -Detach` | Levanta el laboratorio y comprueba `health` |
+| `pwsh scripts/db.ps1 -Accion shell` | psql dentro del contenedor (el puerto de la base no se publica) |
 | `gitleaks detect` | Ausencia de secretos |
 
 ---
@@ -200,7 +203,8 @@ Una historia **no** está terminada porque compile. Ver [`docs/planning/definiti
 7. Sin secretos ni datos sensibles en código, logs ni repositorio.
 8. Documentación actualizada si cambió contrato, esquema o decisión.
 9. OpenAPI regenerado si cambió la API.
-10. Commit atómico y mensaje en formato Conventional Commits.
+10. Si la API cambió, su carpeta en la colección de Postman (`api/bruno/`) al día.
+11. Commit atómico y mensaje en formato Conventional Commits.
 
 ---
 
