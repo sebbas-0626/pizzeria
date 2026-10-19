@@ -1,0 +1,218 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Pizzería API — Pizzas",
+    "description": "Colección de endpoints para gestión de pizzas y variantes. Autenticación JWT.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registrar cliente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@pizzeria.com\",\n  \"password\": \"Admin123!\",\n  \"nombre\": \"Admin Pizzería\",\n  \"telefono\": \"+573001234567\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","register"] }
+          }
+        },
+        {
+          "name": "Login (guarda token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('Token guardado');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@pizzeria.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pizzas — Público",
+      "item": [
+        {
+          "name": "Listar pizzas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pizzas?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","pizzas"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener pizza por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pizzas/{{pizzaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","pizzas","{{pizzaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pizzas — Admin",
+      "item": [
+        {
+          "name": "Crear pizza (guarda pizzaId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) {",
+                  "  pm.collectionVariables.set('pizzaId', res.id);",
+                  "  console.log('pizzaId guardado:', res.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pepperoni Especial\",\n  \"descripcion\": \"Pepperoni, queso extra y orégano\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas"] }
+          }
+        },
+        {
+          "name": "Actualizar pizza",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pepperoni Especial XL\",\n  \"descripcion\": \"Pepperoni, doble queso y orégano\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}"] }
+          }
+        },
+        {
+          "name": "Desactivar pizza (soft delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}"] }
+          }
+        },
+        {
+          "name": "Añadir variante (guarda variantId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) {",
+                  "  pm.collectionVariables.set('variantId', res.id);",
+                  "  console.log('variantId guardado:', res.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": \"MEDIUM\",\n  \"precio\": 15500\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","variantes"] }
+          }
+        },
+        {
+          "name": "Actualizar variante",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 16000,\n  \"available\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","variantes","{{variantId}}"] }
+          }
+        },
+        {
+          "name": "Eliminar variante",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","variantes","{{variantId}}"] }
+          }
+        },
+        {
+          "name": "Subir imagen (S3 / Floci)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [], "description": "Imagen JPG/PNG de la pizza" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/imagen", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","imagen"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl",    "value": "http://localhost:8080" },
+    { "key": "token",      "value": "" },
+    { "key": "pizzaId",    "value": "" },
+    { "key": "variantId",  "value": "" }
+  ]
+}
