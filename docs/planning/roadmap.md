@@ -24,7 +24,7 @@
 |---|---|---|---|---|---|
 | S0 | Requisitos y diseño | Transversal | — | **Aprobado** (ADR y diagramas pendientes) | [sprint-00.md](sprint-00.md) |
 | S1 | Fundamentos del proyecto y PostgreSQL | US-001…US-006, US-080 (parcial) | 27 | **Hecho** | [sprint-01.md](sprint-01.md) |
-| S2 | Catálogo y variantes | US-010…US-013 | 16 | Pendiente — **siguiente** | [sprint-02.md](sprint-02.md) |
+| S2 | Catálogo y variantes | US-010…US-013 | 16 | **En curso** — US-010 `Hecho` | [sprint-02.md](sprint-02.md) |
 | S3 | Pedidos: dominio y persistencia | US-030 (dominio), US-038 (parcial) | 8 | Pendiente | [sprint-03.md](sprint-03.md) |
 | S4 | Identidad, autorización y recogida | US-020…US-023, US-030 (web), US-031…US-038 | 45 | Pendiente | [sprint-04.md](sprint-04.md) |
 | S5 | Calidad, documentación y endurecimiento | US-040…US-045 | 34 | Pendiente | [sprint-05.md](sprint-05.md) |
@@ -98,7 +98,8 @@ crea ningún directorio `catalog/`, `identity/`, `orders/` ni `payments/`. Los p
 | **Entregables verificables** | 6 endpoints de catálogo en Swagger · tests de rol · prueba de que un cambio de precio no altera pedidos previos |
 | **Depende de** | S1 |
 | **Criterio de salida** | Un ADMIN crea una pizza con dos variantes y un CLIENTE las ve con su precio; **no existe ningún endpoint `DELETE`** en el catálogo |
-| **Primera historia** | **US-010** (consulta pública del catálogo, 5 puntos). Es el primer código de negocio del proyecto y el primero bajo capas globales |
+| **Primera historia** | **US-010** (consulta pública del catálogo, 5 puntos) · ✅ **Hecho el 2026-10-17**: 2 endpoints públicos, 108 + 40 pruebas en verde, sin migración |
+| **Siguiente** | **US-011** (alta y edición de pizzas). ⚠️ **Requiere Spring Security** para el 403 del criterio 3, y US-021 (JWT) está en S4. Hay dos salidas: adelantar US-021, o entregar US-011 aceptando que el 403 sólo se pueda probar cuando exista la seguridad |
 
 ### S3 — Pedidos: dominio y persistencia
 

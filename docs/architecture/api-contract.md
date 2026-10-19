@@ -9,8 +9,7 @@
 > con las reglas que no se deducen del código: qué es un 404, por qué un 409, qué está fuera de
 > alcance. No duplica la lista de endpoints; para eso está el OpenAPI.
 >
-> Última actualización: **2026-10-11** (US-005). **Todavía no hay endpoints**: el primero llega con
-> US-010.
+> Última actualización: **2026-10-17** (US-010). Ya hay endpoints: los dos públicos del catálogo.
 
 ---
 
@@ -23,7 +22,7 @@
 | Formato de error | `application/problem+json` (RFC 9457) |
 | Moneda | **COP** (peso colombiano). Importes enteros, **sin decimales** |
 | Fechas | ISO-8601 con zona, siempre en UTC: `2026-10-11T18:30:50Z` |
-| Identificadores | UUID v4, generados por el cliente de la API en el servidor |
+| Identificadores | UUID v4 en clientes, pedidos y pagos; **BIGINT en el catálogo** (migración V2). Los genera la aplicación en el servidor |
 | Correlación | Toda respuesta lleva `X-Trace-Id`. Enviarlo de vuelta es opcional pero útil |
 
 ### 1.1 Los importes se calculan en el servidor
@@ -128,8 +127,8 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 
 | Método | Ruta | Acceso | Historia | Estado |
 |---|---|---|---|---|
-| `GET` | `/api/v1/pizzas` | Público | US-010 | Pendiente |
-| `GET` | `/api/v1/pizzas/{pizzaId}` | Público | US-010 | Pendiente |
+| `GET` | `/api/v1/pizzas` | Público | US-010 | ✅ **Hecho** |
+| `GET` | `/api/v1/pizzas/{pizzaId}` | Público | US-010 | ✅ **Hecho** |
 | `POST` | `/api/v1/admin/pizzas` | `ADMIN` | US-011 | Pendiente |
 | `PATCH` | `/api/v1/admin/pizzas/{pizzaId}` | `ADMIN` | US-011 | Pendiente |
 | `POST` | `/api/v1/admin/pizzas/{pizzaId}/variants` | `ADMIN` | US-012 | Pendiente |
@@ -147,13 +146,95 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 | `POST` | `/api/v1/admin/orders/{id}/complete-pickup` | `ADMIN` | US-037 | Pendiente |
 | `POST` | `/api/v1/admin/pizzas/{id}/image` | `ADMIN` | US-052 | Pendiente |
 
-> **Todos pendientes.** Sprint 1 construye los cimientos: la API todavía **no expone ningún endpoint**.
-> Por eso el `paths` del OpenAPI sale vacío. Es lo esperado, no un fallo.
+---
 
-### 4.1 No existe ningún `DELETE` en el catálogo
+## 4.1 El catálogo público
+
+Las dos rutas de lectura son **públicas**: no llevan token y no se les pide uno. Lo protegido en S2 es
+`/api/v1/admin/**`, que llega con US-011.
+
+### `GET /api/v1/pizzas`
+
+Lista el catálogo en páginas.
+
+| Parámetro | Tipo | Por defecto | Valores | Regla |
+|---|---|---|---|---|
+| `availableOnly` | booleano | **`true`** | `true`, `false` | `true` muestra **sólo lo vendible** (RN-DS-02). `false` añade lo dado de baja y lo agotado, para la vista previa del administrador |
+| `page` | entero | `0` | ≥ 0 | Índice de página, empezando en 0 |
+| `size` | entero | `20` | 1 – 100 | Filas por página. Fuera de rango → **400** |
+
+Respuesta `200`:
+
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Margarita",
+      "description": "Tomate, mozzarella y albahaca",
+      "variants": [
+        {
+          "id": 2,
+          "size": "SMALL",
+          "price": 9900,
+          "available": true
+        }
+      ]
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1
+}
+```
+
+Reglas del contrato:
+
+| Regla | Detalle |
+|---|---|
+| **Orden** | Por `name`, sin distinguir mayúsculas: `Bufala, Diavola, Margarita`. **No** por fecha ni por precio |
+| **`price`** | Número JSON, **no texto**, y **sin decimales**: `12500`, nunca `"12500.00"` ni `12500.00` (RN-IM-05) |
+| **`size`** | `SMALL` \| `MEDIUM` \| `LARGE`. Es un conjunto cerrado: el esquema lo restringe |
+| **Orden de `variants`** | De menor a mayor tamaño |
+| **Catálogo vacío** | `200` con `content: []`, `totalElements: 0` y `totalPages: 0`. Nunca `404` |
+| **Página fuera de rango** | `200` con `content: []` y el `totalElements` correcto. Un `404` obligaría al cliente a distinguir dos casos indistinguibles desde fuera |
+| **`description` ausente** | `null`, nunca `""` |
+| **`totalElements` y `totalPages`** | Siempre con el **mismo filtro** que el contenido. Si no coinciden, el cliente pagina sobre una cuenta que no ve |
+
+**Por qué `availableOnly` viene en `true` por defecto.** El catálogo público muestra lo que se puede pedir.
+Una pizza sin ninguna variante disponible (RN-DS-02) no aparece, aunque esté activa: anunciarla sería una
+entrada que nadie puede convertir en pedido.
+
+### `GET /api/v1/pizzas/{pizzaId}`
+
+Detalle de una pizza, mismo cuerpo que un elemento de la lista.
+
+| Situación | Respuesta |
+|---|---|
+| Existe y se puede pedir | `200` con `id`, `name`, `description` y `variants` |
+| No existe | `404` `CATALOG_PIZZA_NOT_FOUND` |
+| Está dada de baja | `404` `CATALOG_PIZZA_NOT_FOUND` |
+| No tiene ninguna variante disponible | `404` `CATALOG_PIZZA_NOT_FOUND` |
+| `pizzaId` no es un número entero | `400` `MALFORMED_REQUEST` |
+
+Las tres filas de 404 son **la misma respuesta a propósito**: el catálogo público no enseña lo dado de baja,
+así que confirmar por el mismo camino que buscar sería filtrar información. Es el mismo criterio que aplica
+D4 a los pedidos ajenos.
+
+### Lo que todavía no está en el catálogo
+
+| Ausente | Llega con |
+|---|---|
+| `imageUrl` en la respuesta | US-052. Se publica una URL prefirmada generada por el servidor, nunca una clave de almacenamiento |
+| Alta, edición y baja de pizzas | US-011, US-012, US-013 |
+| Cualquier campo de precio en la entrada | Nunca: el cliente no manda precios (RN-IM-01) |
+
+### 4.2 No existe ningún `DELETE` en el catálogo
 
 El catálogo se desactiva, no se borra (RF-CA-09). Desactivar es un `PATCH` con `active=false`. Si algún
-día apareciera un `DELETE` en el catálogo, sería un error de diseño, no una mejora.
+día apareciera un `DELETE` en el catálogo, sería un error de diseño, no una mejora. US-013 lo verifica con
+un test que enumera las rutas registradas y falla si aparece cualquiera.
 
 ---
 
@@ -176,10 +257,11 @@ Decidido antes de escribir código, para que no se lea como un olvido:
 
 | Cambio | Qué hay que actualizar aquí |
 |---|---|
-| Endpoint nuevo o modificado | La tabla de §4 **y** el OpenAPI, en el mismo cambio |
+| Endpoint nuevo o modificado | La tabla de §4, su sección de detalle y el OpenAPI, en el mismo cambio |
 | Código o código HTTP nuevo | §3.2 y `ErrorCode` |
 | Regla de negocio que afecta al contrato | §1, §2 o §3 y `requirements-v1.0.md` |
 | Razón por la que un 404 no es un 403 | §3.3 |
+| Parámetro, orden o límite de un listado | Su sección de detalle, con el valor exacto |
 
 Una historia **no** se cierra con este documento desfasado. Si el OpenAPI y `api-contract.md` no coinciden,
 la historia no está terminada (criterio 3 de US-005 y definición de terminado).

@@ -66,7 +66,8 @@ Estas reglas se aplican a **todas** las migraciones, no sólo a la primera.
 
 | Regla | Detalle | Por qué |
 |---|---|---|
-| **Identificadores** | `UUID` **sin** `DEFAULT gen_random_uuid()` | El agregado necesita su id **antes** de persistirse; si lo genera la base, hay que recuperarlo después de insertar |
+| **Identificadores** | `UUID` **sin** `DEFAULT gen_random_uuid()`, y **`BIGINT` con secuencia en el catálogo** (`pizzas`, `pizza_variants`, `order_items.variant_id`) | El agregado necesita su id **antes** de persistirse; si lo genera la base al insertar, hay que recuperarlo después. El catálogo lleva `BIGINT` desde V2 porque se identifica a mano al probar la API (`/api/v1/pizzas/1`), y la secuencia —no un `DEFAULT` ni `IDENTITY`— es lo que mantiene esa regla |
+| **Numerar al migrar** | Convertir UUID ↔ número con **columna nueva + tabla de equivalencia**, nunca `DROP COLUMN` a pelo | Un `DROP COLUMN` sería más corto y borraría el catálogo de quien lo estuviera usando. La tabla de equivalencia con `row_number()` conserva las filas y deja los ids en 1, 2, 3 |
 | **Dinero** | `NUMERIC(12,0)` | El COP no tiene decimales (RN-IM-05). Con escala 0 el `CHECK line_total = unit_price * quantity` es una igualdad **exacta** y el motor la usa como integridad real |
 | **Fechas** | `TIMESTAMPTZ`, siempre en UTC | Sin zona horaria, un `TIMESTAMP` no sabe qué es «medianoche» |
 | **Enumerados** | `CHECK` con literales, **nunca** tipos `ENUM` | Alterar un `ENUM` exige `ALTER TYPE` y bloquea la tabla; un `CHECK` no tiene nada que alterar |
@@ -155,3 +156,4 @@ En las pruebas de integración, cada test aplica las migraciones sobre un Postgr
 | Versión | Descripción | Fecha | Contenido |
 |---|---|---|---|
 | `V1` | `baseline_schema` | 2026-10-11 | Las 8 tablas del modelo de datos, sus índices, restricciones, y el *trigger* de coherencia del total |
+| `V2` | `catalogo_con_identificadores_bigint` | 2026-10-18 | `pizzas.id`, `pizza_variants.id`, `pizza_variants.pizza_id` y `order_items.variant_id` pasan de `UUID` a `BIGINT`, renumerando las filas existentes con `row_number()`. Añade `seq_pizzas_id` y `seq_pizza_variants_id` |

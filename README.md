@@ -105,8 +105,18 @@ $env:POSTGRES_DB='pizzeria'; $env:POSTGRES_USER='pizzeria_dev'; $env:POSTGRES_PA
 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` | Arranca en local |
 | `./scripts/dev-up.ps1` | Levanta el entorno con Docker Compose |
 | `./scripts/dev-down.ps1` | Lo para |
+| `./scripts/db.ps1 -Accion seed` | Carga el catálogo de ejemplo (6 pizzas con los casos que interesan) |
+| `./scripts/db.ps1 -Accion shell` | psql dentro del contenedor: el puerto de la base **no** se publica |
+| `./scripts/db.ps1 -Accion backup` | Vuelca la base a `infra/local/backups/` (no versionada) |
+| `./scripts/db.ps1 -Accion reset -Force` | Destruye el volumen y levanta de cero |
+| [`api/bruno/`](api/bruno) | Colección de Postman: casos de éxito, de 400 y de 404 de cada endpoint |
 | `docker compose -f infra/local/docker-compose.yml up --build -d --wait` | Lo mismo que `dev-up.ps1`, sin el script |
 | `docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.10.0-eclipse-temurin-21 mvn -B -ntp verify` | `verify` dentro de la imagen de Maven, sin Compose |
+
+> **⚠️ Ojo con PostgreSQL.** Si tienes uno instalado en Windows, `localhost:5432` responde, pero **es otro
+> servidor**: el de la aplicación va en un contenedor cuyo puerto no se publica. Para mirar los datos con
+> DBeaver hay un stack de inspección en el `5433`; los datos, el ciclo de vida del volumen y los respaldos
+> están en [`docs/development/entorno-local.md`](docs/development/entorno-local.md).
 
 ---
 
@@ -172,6 +182,7 @@ Detalle: [`docs/development/spring-conventions.md`](docs/development/spring-conv
 | [`docs/development/conventions.md`](docs/development/conventions.md) | Cómo se escribe el código |
 | [`docs/planning/`](docs/planning) | Qué falta y en qué orden |
 | Swagger UI | Contrato vivo y ejecutable. Sólo en `local` |
+| [`api/bruno/`](api/bruno) | Colección de Postman para probar los endpoints a mano, con sus tests |
 
 ---
 
