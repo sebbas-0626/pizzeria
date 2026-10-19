@@ -29,6 +29,13 @@ if (-not (Test-Path -LiteralPath $compose)) {
     Write-Error "No se encuentra $compose"
 }
 
+# Mismo blindaje que dev-up.ps1: en PowerShell 5.1, con $ErrorActionPreference = 'Stop',
+# cualquier salida por stderr de un comando nativo aborta el script. `docker compose down`
+# escribe avisos por stderr en situaciones normales, así que el script terminaba con un error
+# aunque hubiera parado bien. Se juzga por $LASTEXITCODE.
+$preferenciaPrevia = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+
 if ($Volumen) {
     Write-Host 'Parando y DESTRUYENDO los volumenes (se pierden los datos).' -ForegroundColor Yellow
     docker compose -f $compose down -v --remove-orphans
@@ -37,8 +44,11 @@ else {
     Write-Host 'Parando los servicios. Los datos de PostgreSQL se conservan.' -ForegroundColor Cyan
     docker compose -f $compose down --remove-orphans
 }
+$codigo = $LASTEXITCODE
 
-if ($LASTEXITCODE -ne 0) {
+$ErrorActionPreference = $preferenciaPrevia
+
+if ($codigo -ne 0) {
     Write-Error 'docker compose devolvio un codigo de error.'
 }
 

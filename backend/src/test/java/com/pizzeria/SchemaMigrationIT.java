@@ -77,14 +77,43 @@ class SchemaMigrationIT {
     }
 
     @Test
-    @DisplayName("La migracion V1 queda registrada como aplicada correctamente")
-    void laMigracionQuedaRegistrada() {
+    @DisplayName("Las migraciones quedan registradas como aplicadas correctamente")
+    void lasMigracionesQuedanRegistradas() {
         List<String> historial = jdbc.queryForList("""
                 select version || '|' || description || '|' || success
                 from flyway_schema_history
+                order by installed_rank
                 """, String.class);
 
-        assertThat(historial).containsExactly("1|baseline schema|true");
+        // V1 crea el esquema y V2 pasa el catálogo a BIGINT. Las dos, en orden y con éxito: una
+        // migración a medias deja el esquema en un estado que nadie pidió.
+        assertThat(historial).containsExactly(
+                "1|baseline schema|true",
+                "2|catalogo con identificadores bigint|true");
+    }
+
+    @Test
+    @DisplayName("El catalogo se identifica con BIGINT y los pedidos con UUID")
+    void elCatalogoUsaBigintYLosPedidosUuid() {
+        // Es la diferencia que introduces V2 y la que se puede volver a perder sin querer: que un
+        // cambio de tipos se aplique a medio catálogo, o al revés, se ve aquí y no leyendo el código.
+        assertThat(tipoColumna("pizzas", "id")).isEqualTo("bigint");
+        assertThat(tipoColumna("pizza_variants", "id")).isEqualTo("bigint");
+        assertThat(tipoColumna("pizza_variants", "pizza_id")).isEqualTo("bigint");
+        assertThat(tipoColumna("order_items", "variant_id")).isEqualTo("bigint");
+
+        // Lo que sigue con UUID no se ha tocado: son datos que nacen en el servidor y nadie teclea.
+        assertThat(tipoColumna("orders", "id")).isEqualTo("uuid");
+        assertThat(tipoColumna("order_items", "id")).isEqualTo("uuid");
+        assertThat(tipoColumna("customers", "id")).isEqualTo("uuid");
+    }
+
+    private String tipoColumna(String tabla, String columna) {
+        return jdbc.queryForObject("""
+                select data_type
+                from information_schema.columns
+                where table_name = ? and column_name = ?
+                """, String.class, tabla, columna);
     }
 
     @Test
@@ -151,16 +180,16 @@ class SchemaMigrationIT {
     @Test
     @DisplayName("Una pizza no puede tener dos variantes del mismo tamano")
     void unaPizzaNoTieneDosVariantesDelMismoTamano() {
-        UUID pizza = pizza();
+        long pizza = pizza();
 
         // La primera variante del tamaño es legítima: la restricción no es "una pizza no
         // puede tener variantes", es "no puede tener DOS DEL MISMO TAMAÑO".
         jdbc.update("insert into pizza_variants (id, pizza_id, size, price) values (?,?,?,?)",
-                UUID.randomUUID(), pizza, "MEDIUM", new BigDecimal("13000"));
+                varianteDe(), pizza, "MEDIUM", new BigDecimal("13000"));
 
         assertThatThrownBy(() -> jdbc.update(
                 "insert into pizza_variants (id, pizza_id, size, price) values (?,?,?,?)",
-                UUID.randomUUID(), pizza, "MEDIUM", new BigDecimal("14000")))
+                varianteDe(), pizza, "MEDIUM", new BigDecimal("14000")))
                 .hasMessageContaining("uq_pizza_variants_pizza_size");
     }
 
@@ -171,11 +200,11 @@ class SchemaMigrationIT {
     @Test
     @DisplayName("El precio de una variante es siempre mayor que cero")
     void elPrecioEsMayorQueCero() {
-        UUID pizza = pizza();
+        long pizza = pizza();
 
         assertThatThrownBy(() -> jdbc.update(
                 "insert into pizza_variants (id, pizza_id, size, price) values (?,?,?,?)",
-                UUID.randomUUID(), pizza, "LARGE", BigDecimal.ZERO))
+                varianteDe(), pizza, "LARGE", BigDecimal.ZERO))
                 .hasMessageContaining("chk_pizza_variants_price");
     }
 
@@ -333,15 +362,23 @@ class SchemaMigrationIT {
         return jdbc.queryForObject("select id from customers where role = 'ADMIN' limit 1", UUID.class);
     }
 
-    private UUID variante() {
-        return jdbc.queryForObject("select id from pizza_variants limit 1", UUID.class);
+    private long variante() {
+        // BIGINT desde la migración V2: el catálogo se identifica con números.
+        return jdbc.queryForObject("select id from pizza_variants limit 1", Long.class);
     }
 
-    private UUID pizza() {
+    private long pizza() {
         // Nombre único: pizzas.name es único entre las activas, y los tests comparten base.
+        // La columna id es BIGINT y NO tiene valor por defecto: el id lo pide la aplicación con
+        // `nextval`, que es lo que harían los casos de uso de escritura. El nombre lleva un UUID para
+        // que no choque con el de otro test.
         return jdbc.queryForObject(
-                "insert into pizzas (id, name) values (?,?) returning id",
-                UUID.class, UUID.randomUUID(), "Pizza-" + UUID.randomUUID());
+                "insert into pizzas (id, name) values (nextval('seq_pizzas_id'), ?) returning id",
+                Long.class, "Pizza-" + UUID.randomUUID());
+    }
+
+    private long varianteDe() {
+        return jdbc.queryForObject("select nextval('seq_pizza_variants_id')", Long.class);
     }
 
     private UUID pedidoPendiente(String numero, long total) {

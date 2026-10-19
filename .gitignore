@@ -42,6 +42,9 @@ desktop.ini
 *.log
 logs/
 .pgdata/
+# Volcados de la base local: son una COPIA de los datos, con hashes de contraseña y pedidos.
+# Nunca se versionan.
+infra/local/backups/
 
 # ---------- Informes generados ----------
 docs/architecture/openapi.generated.json
