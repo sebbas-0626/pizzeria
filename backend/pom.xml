@@ -189,12 +189,32 @@
         </dependency>
 
         <!--
+          spring-security-crypto, y NO spring-boot-starter-security.
+
+          La diferencia entre ambos es exactamente lo que importa en US-020. Este módulo
+          trae SÓLO las implementaciones (BCryptPasswordEncoder, DelegatingPasswordEncoder) y
+          no registra nada: añadirlo no cambia el comportamiento de ninguna ruta, sólo hace
+          que exista el cifrado que pide RF-ID-03. El starter, en cambio, autoconfigura una
+          cadena de filtros que bloquearía todos los endpoints —incluido el catálogo público
+          y el de actuator— sin que exista todavía una configuración de seguridad hecha a
+          propósito. Esa cadena llega con US-021 y US-022, no antes.
+
+          Sin versión: la gestiona el BOM de Spring Boot.
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!--
           Dependencias que se añaden más adelante, y por qué no están aquí:
 
-            - spring-boot-starter-security + oauth2-resource-server → US-021 (Sprint 4).
+            - spring-boot-starter-security + oauth2-resource-server → US-021 y US-022.
               Añadirlas ahora activaría la autoconfiguración de seguridad por defecto
               y bloquearía los endpoints, incluidos los de actuator, sin que todavía
               exista configuración de seguridad que lo resuelva intencionadamente.
+              El cifrado, que sí hace falta ya, entra como spring-security-crypto: ese
+              módulo no autoconfigura nada.
 
             - software.amazon.awssdk:* → US-050 y US-060 (Sprints 6 y 7).
               Además de llegar tarde, el requisito RNF-05 pide que el perfil por
