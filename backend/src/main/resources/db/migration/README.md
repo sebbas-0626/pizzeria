@@ -157,3 +157,4 @@ En las pruebas de integración, cada test aplica las migraciones sobre un Postgr
 |---|---|---|---|
 | `V1` | `baseline_schema` | 2026-10-11 | Las 8 tablas del modelo de datos, sus índices, restricciones, y el *trigger* de coherencia del total |
 | `V2` | `catalogo_con_identificadores_bigint` | 2026-10-18 | `pizzas.id`, `pizza_variants.id`, `pizza_variants.pizza_id` y `order_items.variant_id` pasan de `UUID` a `BIGINT`, renumerando las filas existentes con `row_number()`. Añade `seq_pizzas_id` y `seq_pizza_variants_id` |
+| `V3` | `rol_empleado` | 2026-10-18 | Abre los dos `CHECK` de rol (`customers` y `customer_roles`) a `('CUSTOMER', 'EMPLOYEE', 'ADMIN')`. Sólo cambia la lista: ninguna fila se toca ([`requirements-v1.1.md`](../../../../docs/requirements/requirements-v1.1.md)) |
