@@ -7,6 +7,20 @@ spring:
   application:
     name: pizzeria-backend
 
+  jackson:
+    deserialization:
+      # Un campo que el endpoint no declara devuelve 400 MALFORMED_REQUEST en vez de ignorarse.
+      #
+      # Spring Boot lo desactiva por defecto porque es lo cómodo cuando los DTOs se comparten con
+      # clientes que mandan de más. Aquí es lo contrario de lo que queremos: un endpoint que acepta
+      # campos que no declara acaba creando algo que nadie pidió, y es exactamente lo que pasa con
+      # `"role": "ADMIN"` en el registro (RF-ID-04). Ignorarlo en silencio devolvería 201 y un
+      # administrador; rechazarlo devuelve 400 y dice cuál es el campo sobrante.
+      #
+      # Con esta línea, cualquier DTO nuevo hereda la regla sin tener que acordarse: es una decisión
+      # de la API entera, no de un endpoint.
+      fail-on-unknown-properties: true
+
   jpa:
     hibernate:
       # El esquema es sólo de Flyway. Nunca create ni update: si una migración no está
