@@ -109,10 +109,10 @@ Si las tres son "no", no se abstrae. En este proyecto **no** existen: CQRS, stra
 
 1. **El servidor calcula todos los importes.** El cliente nunca envía ni decide precio unitario ni total. Si aparece un campo `price`/`total` en la entrada, se ignora y hay un test que lo demuestra.
 2. **El pedido guarda una foto histórica**: nombre de pizza, tamaño, precio unitario, cantidad e importe por línea.
-3. **`BigDecimal` para dinero**, nunca `double` ni `float`. La moneda es **COP (peso colombiano)**, que no tiene decimales: escala **0**, `RoundingMode.UNNECESSARY` explícito (un importe fraccionario es un error, no un caso que redondear) y `NUMERIC(12,0)` en PostgreSQL.
+3. **`BigDecimal` para dinero**, nunca `double` ni `float`. La moneda es **COP (peso colombiano)**: escala **2**, `RoundingMode.UNNECESSARY` explícito y `DECIMAL(10,2)` en PostgreSQL.
 4. **La máquina de estados vive en el dominio**, no en los controladores (ver diagrama `02-order-state-machine`).
 5. **La propiedad del pedido se verifica en el servidor**, filtrando por `customerId` en la consulta, no comparando después.
-6. **No existe forma pública de registrarse como `ADMIN` ni como `EMPLOYEE`.** El endpoint de registro ignora cualquier rol recibido y fuerza `CUSTOMER`; el personal se da de alta por dentro.
+6. **No existe forma pública de registrarse como `ADMIN` ni como `COOK`.** El endpoint de registro ignora cualquier rol recibido y fuerza `CLIENTE`; el personal se da de alta por dentro.
 7. **Nada de secretos en el repositorio.** `.env` está en `.gitignore`; sólo se versiona `.env.example`. El CI ejecuta escaneo de secretos.
 8. **Nada de contraseñas, tokens ni pilas de excepciones en los logs.**
 9. **Ningún recurso de AWS con coste sin autorización escrita del responsable.**
