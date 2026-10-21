@@ -43,7 +43,7 @@ mandar el total, podría mandar `1`. El servidor calcula; el cliente sólo dice 
 | Firma | **RS256** |
 | Caducidad | **15 minutos**. No hay token de renovación: al caducar, hay que iniciar sesión otra vez |
 | Claims | `sub` (UUID del cliente), `roles`, `iss`, `iat`, `exp` |
-| Roles | Exactamente uno por usuario: `CUSTOMER` o `ADMIN` |
+| Roles | `CUSTOMER`, `EMPLOYEE` o `ADMIN`. El primero es el único al que llega el registro público; los otros dos los crea el responsable por dentro ([`requirements-v1.1.md`](../requirements/requirements-v1.1.md)) |
 | Obtener `ADMIN` | **Imposible por vía pública.** El registro siempre fuerza `CUSTOMER` (RN-SE-03) |
 
 Se documenta en el contrato con el esquema `bearerAuth`, declarado en
@@ -140,11 +140,27 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 | `GET` | `/api/v1/orders` | Autenticado | US-031 | Pendiente |
 | `GET` | `/api/v1/orders/{orderId}` | Autenticado | US-032 | Pendiente |
 | `POST` | `/api/v1/orders/{orderId}/cancel` | Autenticado | US-033 | Pendiente |
-| `GET` | `/api/v1/admin/orders` | `ADMIN` | US-034 | Pendiente |
-| `POST` | `/api/v1/admin/orders/{id}/confirm` | `ADMIN` | US-035 | Pendiente |
-| `POST` | `/api/v1/admin/orders/{id}/cancel` | `ADMIN` | US-036 | Pendiente |
-| `POST` | `/api/v1/admin/orders/{id}/complete-pickup` | `ADMIN` | US-037 | Pendiente |
+| `GET` | `/api/v1/employee/orders` | `ADMIN`, `EMPLOYEE` | US-034 | Pendiente |
+| `POST` | `/api/v1/employee/orders/{id}/confirm` | `ADMIN`, `EMPLOYEE` | US-035 | Pendiente |
+| `POST` | `/api/v1/employee/orders/{id}/cancel` | `ADMIN`, `EMPLOYEE` | US-036 | Pendiente |
+| `POST` | `/api/v1/employee/orders/{id}/complete-pickup` | `ADMIN`, `EMPLOYEE` | US-037 | Pendiente |
 | `POST` | `/api/v1/admin/pizzas/{id}/image` | `ADMIN` | US-052 | Pendiente |
+
+---
+
+## 4.0 Qué entra por dónde
+
+| Prefijo | Quién entra | Qué hay dentro |
+|---|---|---|
+| `/api/v1/pizzas/**` | **Público**, sin token | Leer el catálogo |
+| `/api/v1/admin/**` | `ADMIN` | **El catálogo**: crear pizzas, variantes, precios y disponibilidad (US-011, US-012, US-013, US-052) |
+| `/api/v1/employee/**` | `ADMIN` o `EMPLOYEE` | **Los pedidos del mostrador**: listar todos, confirmar, cancelar y registrar la recogida con el cobro (US-034…US-037) |
+| `/api/v1/auth/**` | Público | Registrarse y hacer login |
+| `/api/v1/orders/**` | Autenticado | Los pedidos **del propio cliente** |
+
+La separación no es cosmetics: **`/admin/**` es lo que cuesta dinero y `/employee/**` es lo que se hace
+todos los días**. Por eso un `EMPLOYEE` no entra en `/admin/**` aunque sus rutas sean de pedidos
+(requisitos v1.1 §2.1), y un `ADMIN` entra en `/employee/**` porque puede hacerlo todo.
 
 ---
 
@@ -222,7 +238,52 @@ Las tres filas de 404 son **la misma respuesta a propósito**: el catálogo púb
 así que confirmar por el mismo camino que buscar sería filtrar información. Es el mismo criterio que aplica
 D4 a los pedidos ajenos.
 
-### Lo que todavía no está en el catálogo
+### 4.3 Identidad
+
+#### `POST /api/v1/auth/register`
+
+Registra un cliente. **Pública**: no lleva token.
+
+Cuerpo:
+
+| Campo | Tipo | Obligatorio | Regla |
+|---|---|---|---|
+| `email` | texto | sí | Formato válido, 254 caracteres como máximo. Se guarda **en minúsculas** |
+| `password` | texto | sí | 10 caracteres como mínimo. Se guarda **codificada con BCrypt**, nunca en claro |
+| `fullName` | texto | sí | 1 a 120 caracteres |
+| `phone` | texto | no | 30 caracteres como máximo. Ausente sale como `null` |
+
+> **No hay campo de rol, y se note.** Un `"role": "ADMIN"` —o un `"roles"`, o cualquier otro campo que no
+> esté en la tabla— devuelve **400** `MALFORMED_REQUEST` diciendo cuál sobra. La regla es global
+> (`spring.jackson.deserialization.fail-on-unknown-properties=true`): **la API rechaza los campos que no
+> declara**, y el rol nunca se toma del cuerpo (RF-ID-04). El registro **siempre** crea `CUSTOMER`.
+
+Respuesta `201`:
+
+```json
+{
+  "id": "6f1c2b4e-0a3d-4c5e-9b7a-8d9e0f1a2b3c",
+  "email": "lucia@pizzeria.co",
+  "fullName": "Lucia Perez",
+  "phone": "+573001234567",
+  "role": "CUSTOMER",
+  "createdAt": "2026-10-18T15:00:00Z"
+}
+```
+
+**No devuelve token** (D11, ratificada): quien se registra hace login después. **No devuelve la contraseña
+ni su hash**: son dos formas de filtrar el mismo secreto.
+
+| Situación | Respuesta |
+|---|---|
+| Falta `email`, `fullName`, o la contraseña no llega a 10 caracteres | `400` `REQUEST_VALIDATION_FAILED`, con la lista de campos |
+| El cuerpo trae un campo que no existe (un `role`, una errata) | `400` `MALFORMED_REQUEST`, diciendo el nombre del campo |
+| El email ya está registrado | `409` `IDENTITY_EMAIL_ALREADY_REGISTERED` |
+
+> **El 409 permite enumerar correos.** Está aceptado en el MVP y anotado como deuda en `backlog.md`: la
+> alternativa —responder «registrado» siempre— deja al usuario sin saber por qué falla su alta.
+
+### 4.4 Lo que todavía no está en el catálogo
 
 | Ausente | Llega con |
 |---|---|

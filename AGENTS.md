@@ -14,7 +14,7 @@ Cuando dos documentos se contradigan, gana el primero de esta lista:
 
 | Prioridad | Documento | Qué gobierna |
 |---|---|---|
-| 1 | `docs/requirements/requirements-v1.0.md` | **Reglas de negocio.** Aprobado explícitamente por el responsable |
+| 1 | `docs/requirements/requirements-v1.0.md` (aprobado y congelado) **+ [`requirements-v1.1.md`](docs/requirements/requirements-v1.1.md)** (delta: el rol `EMPLOYEE`) | **Reglas de negocio.** Aprobado explícitamente por el responsable |
 | 2 | `docs/adr/*` | Decisiones técnicas de arquitectura y stack, con sus alternativas |
 | 3 | `docs/architecture/{architecture,data-model,api-contract,security}.md` | Diseño de capas, esquema, contrato HTTP y modelo de amenazas |
 | 4 | `docs/architecture/openapi.json` | Contrato observable, verificado por pruebas |
@@ -112,7 +112,7 @@ Si las tres son "no", no se abstrae. En este proyecto **no** existen: CQRS, stra
 3. **`BigDecimal` para dinero**, nunca `double` ni `float`. La moneda es **COP (peso colombiano)**, que no tiene decimales: escala **0**, `RoundingMode.UNNECESSARY` explícito (un importe fraccionario es un error, no un caso que redondear) y `NUMERIC(12,0)` en PostgreSQL.
 4. **La máquina de estados vive en el dominio**, no en los controladores (ver diagrama `02-order-state-machine`).
 5. **La propiedad del pedido se verifica en el servidor**, filtrando por `customerId` en la consulta, no comparando después.
-6. **No existe forma pública de registrarse como `ADMIN`.** El endpoint de registro ignora cualquier rol recibido y fuerza `CUSTOMER`.
+6. **No existe forma pública de registrarse como `ADMIN` ni como `EMPLOYEE`.** El endpoint de registro ignora cualquier rol recibido y fuerza `CUSTOMER`; el personal se da de alta por dentro.
 7. **Nada de secretos en el repositorio.** `.env` está en `.gitignore`; sólo se versiona `.env.example`. El CI ejecuta escaneo de secretos.
 8. **Nada de contraseñas, tokens ni pilas de excepciones en los logs.**
 9. **Ningún recurso de AWS con coste sin autorización escrita del responsable.**

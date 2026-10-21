@@ -66,6 +66,7 @@ class SchemaMigrationIT {
 
         assertThat(tablas).containsExactlyInAnyOrder(
                 "cash_payments",
+                "categories",
                 "customer_roles",
                 "customers",
                 "flyway_schema_history",
@@ -73,7 +74,8 @@ class SchemaMigrationIT {
                 "order_status_history",
                 "orders",
                 "pizza_variants",
-                "pizzas");
+                "pizzas",
+                "products");
     }
 
     @Test
@@ -89,7 +91,8 @@ class SchemaMigrationIT {
         // migración a medias deja el esquema en un estado que nadie pidió.
         assertThat(historial).containsExactly(
                 "1|baseline schema|true",
-                "2|catalogo con identificadores bigint|true");
+                "2|catalogo con identificadores bigint|true",
+                "4|categories and products|true");
     }
 
     @Test

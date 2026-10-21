@@ -4,7 +4,6 @@ import com.pizzeria.domain.model.Pizza;
 import com.pizzeria.domain.model.PizzaVariant;
 import com.pizzeria.domain.port.out.PizzaCatalogPort;
 import com.pizzeria.infrastructure.adapter.out.persistence.entity.PizzaJpaEntity;
-import com.pizzeria.infrastructure.adapter.out.persistence.entity.PizzaVariantJpaEntity;
 import com.pizzeria.infrastructure.adapter.out.persistence.mapper.PizzaMapper;
 import com.pizzeria.infrastructure.adapter.out.persistence.mapper.PizzaVariantMapper;
 import com.pizzeria.infrastructure.adapter.out.persistence.repository.PizzaJpaRepository;

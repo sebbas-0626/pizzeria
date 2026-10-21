@@ -1,14 +1,23 @@
-# Sprint 02 — Catálogo y variantes
+# Sprint 02 — Catálogo, variantes e identidad
 
-> **Estado:** En curso · US-010 `Hecho`, US-011…US-013 pendientes
+> **Estado:** En curso · US-010 y US-020 `Hecho` · US-021, US-022 (mitad) y US-011…US-013 pendientes
 > **Objetivo:** el catálogo se lee públicamente y se gestiona en privado por el administrador.
-> **Historias:** US-010, US-011, US-012, US-013
-> **Puntos:** 16
+> **Historias:** US-010, US-020, US-021, US-022 (regla de `/admin/**`), US-011, US-012, US-013
+> **Puntos:** 34
 > **Documento efímero:** al terminar, lo relevante pasa al backlog y a la documentación de arquitectura.
 >
 > **Estructura de paquetes: capas globales**, según [ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md).
 > Este es el **primer sprint que escribe código de negocio** y por eso es el primero que aplica la estructura
 > por capas. Las tareas de `sprint-03.md`…`sprint-07.md` se corrigieron el mismo día por el mismo motivo.
+>
+> **⚠️ Orden cambiado el 2026-10-18** (ver el registro de cambios de [`backlog.md`](backlog.md)). Se
+> adelantaron **US-020 y US-021**, y con ellas la regla de rol de **US-022**, desde S4. No es un cambio de
+> gusto: el criterio 3 de US-011 pide un 403 sin ADMIN, y sin Spring Security **`/api/v1/admin/**`
+> quedaría abierto a cualquiera** con sólo conocer la URL. Un endpoint sin proteger es peor que uno que
+> aún no existe.
+>
+> US-022 se **parte**: aquí entra la regla por rol (401 sin token, 403 con rol insuficiente) y en S4 queda
+> la de propiedad del recurso (pedido ajeno → 404), que necesita los pedidos.
 
 ---
 
@@ -16,10 +25,17 @@
 
 | ID | Título | Puntos | Riesgo principal |
 |---|---|---|---|
-| US-010 | Consulta pública del catálogo | 5 | Consultas N+1 al cargar variantes |
+| US-010 | Consulta pública del catálogo | 5 | ✅ Hecho · Consultas N+1 al cargar variantes |
+| US-020 | Registro de cliente | 5 | ✅ Hecho · Que el registro público permita crear ADMIN |
+| US-021 | Autenticación y emisión de JWT | 8 | Caducidad y filtrado del token; la clave no puede versionarse |
+| US-022 | Autorización por roles (mitad de la historia) | ~2 | Que una ruta quede fuera de la regla y quede abierta |
 | US-011 | Alta y edición de pizzas (admin) | 5 | Semántica de `PATCH` con campos ausentes |
 | US-012 | Alta y edición de variantes (admin) | 5 | Restricción de unicidad por tamaño |
 | US-013 | Baja lógica del catálogo | 3 | Que alguien añada un `DELETE` sin darse cuenta |
+
+**Nada de identidad entra aquí sin decisión previa:** D11 y D12 ya estaban ratificadas el 2026-10-17, así
+que se implementa lo aprobado —RS256, 15 minutos, sin refresh token, y registro con `201` del recurso sin
+token— sin volver a abrir la discusión.
 
 ---
 
@@ -239,6 +255,8 @@ docs/architecture/api-contract.md     (§4.1 El catálogo público)
 
 | Fecha | Historia | Estado | Notas |
 |---|---|---|---|
+| 2026-10-18 | **US-020** | **Hecho** | ./mvnw clean verify: **160 unitarias + 49 de integración, 0 fallos**. POST /api/v1/auth/register → 201 sin token (D11). El rol no existe en el DTO, lo fija Customer.registrar y mandarlo devuelve 400. spring-security-crypto (cifrado sin autoconfigurar seguridad) y ail-on-unknown-properties global. Verificado con 6 peticiones HTTP reales contra el laboratorio |
+| 2026-10-18 | — (planificación) | — | **Orden cambiado por decisión del responsable**: US-020 y US-021 se adelantan de S4, y con ellas la regla por rol de US-022, para que `/api/v1/admin/**` **no exista nunca sin protección**. US-022 se parte: la propiedad del recurso (404) sigue en S4 con los pedidos. Puntos 16 → 34. Ninguna decisión de negocio modificada: D11 y D12 ya estaban ratificadas. Sin código |
 | 2026-10-17 | **US-010** | **Hecho** | `./mvnw clean verify`: **108 unitarias + 40 de integración, 0 fallos**. 2 endpoints públicos, `Money` adelantado desde US-030, puerto en `domain/port/out` hablando en límite/desplazamiento. N+1 descartado con un número exacto de 2 sentencias. Sin migración: `EXPLAIN` sobre 50 000 pizzas confirma que `uq_pizzas_name_active` sirve filtro y orden. Desviaciones de la lista de tareas anotadas en §2 y §6 |
 | 2026-10-17 | — | — | Corregidas las rutas de este documento y de `sprint-03`…`sprint-07`: el sprint se planificó con la estructura por **módulo** (`catalog/domain/…`, `catalog/application/port/out/…`), sustituida por **capas globales** el 2026-10-15 ([ADR-0004](../adr/0004-estructura-de-paquetes-por-capas.md), [ADR-0005](../adr/0005-los-puertos-se-declaran-en-el-dominio.md)). Sin historia empezada. |
 | — | — | — | Sprint no iniciado |

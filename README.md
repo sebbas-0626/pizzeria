@@ -115,8 +115,9 @@ $env:POSTGRES_DB='pizzeria'; $env:POSTGRES_USER='pizzeria_dev'; $env:POSTGRES_PA
 
 > **⚠️ Ojo con PostgreSQL.** Si tienes uno instalado en Windows, `localhost:5432` responde, pero **es otro
 > servidor**: el de la aplicación va en un contenedor cuyo puerto no se publica. Para mirar los datos con
-> DBeaver hay un stack de inspección en el `5433`; los datos, el ciclo de vida del volumen y los respaldos
-> están en [`docs/development/entorno-local.md`](docs/development/entorno-local.md).
+> un cliente SQL hay un stack de inspección que publica el `5435` (ver §5 de
+> [`docs/development/entorno-local.md`](docs/development/entorno-local.md)); los datos, el ciclo de vida del
+> volumen y los respaldos, también.
 
 ---
 
@@ -197,7 +198,7 @@ Detalle: [`docs/development/spring-conventions.md`](docs/development/spring-conv
 | US-005 · Documentación OpenAPI con esquema `bearer` | ✅ |
 | US-006 · CI en GitHub Actions | ✅ |
 | US-010…US-013 · Catálogo de pizzas | Pendiente (S2) |
-| US-020…US-023 · Registro, login y autorización | Pendiente (S4) |
+| US-020…US-023 · Registro, login y autorización | Pendiente (S2 y S4) |
 | US-030…US-038 · Pedidos y cobro | Pendiente (S3, S4) |
 
 Seguimiento completo: [`docs/planning/backlog.md`](docs/planning/backlog.md)

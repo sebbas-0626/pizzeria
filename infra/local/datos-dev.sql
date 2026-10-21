@@ -93,6 +93,23 @@ ON CONFLICT DO NOTHING;
 -- `./scripts/db.ps1 -Accion reset -Force`.
 -- -------------------------------------------------------------------------------------
 
+-- -------------------------------------------------------------------------------------
+-- Categorías y productos (catálogo legacy /products)
+-- -------------------------------------------------------------------------------------
+INSERT INTO categories (id, name, description) VALUES
+    (1, 'Classic Pizzas', 'Traditional recipes')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO products (id, category_id, name, description, price, available) VALUES
+    (1, 1, 'Margarita', 'Tomato, mozzarella, basil', 25000, true),
+    (2, 1, 'Pepperoni', 'Tomato, mozzarella, pepperoni', 32000, true)
+ON CONFLICT DO NOTHING;
+
+SELECT setval('seq_categories_id', GREATEST((SELECT max(id) FROM categories), 1));
+SELECT setval('seq_products_id', GREATEST((SELECT max(id) FROM products), 1));
+
 SELECT 'pizzas: ' || count(*) AS resultado FROM pizzas
 UNION ALL
-SELECT 'variantes: ' || count(*) FROM pizza_variants;
+SELECT 'variantes: ' || count(*) FROM pizza_variants
+UNION ALL
+SELECT 'productos: ' || count(*) FROM products;

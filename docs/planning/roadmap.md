@@ -24,9 +24,9 @@
 |---|---|---|---|---|---|
 | S0 | Requisitos y diseño | Transversal | — | **Aprobado** (ADR y diagramas pendientes) | [sprint-00.md](sprint-00.md) |
 | S1 | Fundamentos del proyecto y PostgreSQL | US-001…US-006, US-080 (parcial) | 27 | **Hecho** | [sprint-01.md](sprint-01.md) |
-| S2 | Catálogo y variantes | US-010…US-013 | 16 | **En curso** — US-010 `Hecho` | [sprint-02.md](sprint-02.md) |
+| S2 | Catálogo, variantes e identidad | US-010…US-013, **US-020, US-021**, US-022 (parcial) | **34** | **En curso** — US-010 y US-020 `Hecho` | [sprint-02.md](sprint-02.md) |
 | S3 | Pedidos: dominio y persistencia | US-030 (dominio), US-038 (parcial) | 8 | Pendiente | [sprint-03.md](sprint-03.md) |
-| S4 | Identidad, autorización y recogida | US-020…US-023, US-030 (web), US-031…US-038 | 45 | Pendiente | [sprint-04.md](sprint-04.md) |
+| S4 | Identidad (resto), autorización y recogida | US-022 (propiedad), US-023, US-030 (web), US-031…US-038 | **32** | Pendiente | [sprint-04.md](sprint-04.md) |
 | S5 | Calidad, documentación y endurecimiento | US-040…US-045 | 34 | Pendiente | [sprint-05.md](sprint-05.md) |
 | S6 | Integración con S3 (imágenes) | US-050…US-052 | 21 | Pendiente | [sprint-06.md](sprint-06.md) |
 | S7 | Integración con SQS (mensajería) | US-060…US-062 | 26 | Pendiente | [sprint-07.md](sprint-07.md) |
@@ -94,12 +94,12 @@ crea ningún directorio `catalog/`, `identity/`, `orders/` ni `payments/`. Los p
 | | |
 |---|---|
 | **Objetivo** | El catálogo se lee públicamente y se gestiona en privado por el administrador |
-| **Historias** | US-010, US-011, US-012, US-013 |
-| **Entregables verificables** | 6 endpoints de catálogo en Swagger · tests de rol · prueba de que un cambio de precio no altera pedidos previos |
+| **Historias** | US-010, **US-020, US-021, US-022 (la regla de `/admin/**`)**, US-011, US-012, US-013 |
+| **Entregables verificables** | 6 endpoints de catálogo en Swagger · registro y login con JWT · **tests de rol (401 sin token, 403 con rol insuficiente)** · prueba de que un cambio de precio no altera pedidos previos |
 | **Depende de** | S1 |
 | **Criterio de salida** | Un ADMIN crea una pizza con dos variantes y un CLIENTE las ve con su precio; **no existe ningún endpoint `DELETE`** en el catálogo |
 | **Primera historia** | **US-010** (consulta pública del catálogo, 5 puntos) · ✅ **Hecho el 2026-10-17**: 2 endpoints públicos, 108 + 40 pruebas en verde, sin migración |
-| **Siguiente** | **US-011** (alta y edición de pizzas). ⚠️ **Requiere Spring Security** para el 403 del criterio 3, y US-021 (JWT) está en S4. Hay dos salidas: adelantar US-021, o entregar US-011 aceptando que el 403 sólo se pueda probar cuando exista la seguridad |
+| **Siguiente** | ✅ **US-020 hecha el 2026-10-18**. Ahora: **US-021** (login + JWT) · ✅ **decidido el 2026-10-18**: US-020 y US-021 se adelantan a S2, y con ellas la regla de rol de US-022. La razón es la del punto anterior, y no es de orden: **entregar US-011 sin seguridad deja `/api/v1/admin/**` abierto a cualquiera**, y un endpoint sin proteger es peor que un endpoint que aún no existe |
 
 ### S3 — Pedidos: dominio y persistencia
 
