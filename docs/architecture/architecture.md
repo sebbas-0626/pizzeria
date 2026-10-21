@@ -152,7 +152,7 @@ Todas las versiones de esta tabla son **verificadas**: se leyeron del árbol de 
 |---|---|---|---|---|
 | Emulador local | **Floci** | — | US-051 | Puerto 4566, credenciales de prueba, `endpointOverride` por variable de entorno (ADR-0006, pendiente de redactar) |
 | SDK | AWS SDK for Java **v2** | — | US-050 / US-060 | **Prohibido** en `domain` y `application`; sólo en `infrastructure.adapter.out.storage` y `..messaging` |
-| Almacenamiento | S3 (imágenes de pizza) | — | US-050…US-052 | Puerto `ImageStorage` (`store` / `presign` / `delete`) |
+| Almacenamiento | S3 (imágenes de producto) | — | US-050…US-052 | Puerto `ImageStorage` (`store` / `presign` / `delete`) |
 | Mensajería | SQS + *transactional outbox* | — | US-060…US-062 | A partir de S7; hoy **no existe** en el proyecto |
 
 **Invariante comprobable:** con el perfil por defecto el backend arranca **sin ningún servicio de AWS**. No hay una sola dependencia `software.amazon.awssdk` en el `pom.xml`.

@@ -20,9 +20,9 @@
 | Base | `/api/v1` |
 | Formato de petición y respuesta | `application/json`, salvo `multipart/form-data` en las subidas de imagen |
 | Formato de error | `application/problem+json` (RFC 9457) |
-| Moneda | **COP** (peso colombiano). Importes enteros, **sin decimales** |
+| Moneda | **COP** (peso colombiano). Importes con **2 decimales** |
 | Fechas | ISO-8601 con zona, siempre en UTC: `2026-10-11T18:30:50Z` |
-| Identificadores | UUID v4 en clientes, pedidos y pagos; **BIGINT en el catálogo** (migración V2). Los genera la aplicación en el servidor |
+| Identificadores | Enteros (BIGINT) en todas las tablas. Los genera la aplicación en el servidor |
 | Correlación | Toda respuesta lleva `X-Trace-Id`. Enviarlo de vuelta es opcional pero útil |
 
 ### 1.1 Los importes se calculan en el servidor
@@ -43,7 +43,7 @@ mandar el total, podría mandar `1`. El servidor calcula; el cliente sólo dice 
 | Firma | **RS256** |
 | Caducidad | **15 minutos**. No hay token de renovación: al caducar, hay que iniciar sesión otra vez |
 | Claims | `sub` (UUID del cliente), `roles`, `iss`, `iat`, `exp` |
-| Roles | `CUSTOMER`, `EMPLOYEE` o `ADMIN`. El primero es el único al que llega el registro público; los otros dos los crea el responsable por dentro ([`requirements-v1.1.md`](../requirements/requirements-v1.1.md)) |
+| Roles | `CLIENTE`, `COOK` o `ADMIN`. El primero es el único al que llega el registro público; los otros dos los crea el responsable por dentro |
 | Obtener `ADMIN` | **Imposible por vía pública.** El registro siempre fuerza `CUSTOMER` (RN-SE-03) |
 
 Se documenta en el contrato con el esquema `bearerAuth`, declarado en

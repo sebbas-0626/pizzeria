@@ -63,7 +63,8 @@ public class GlobalExceptionHandler {
             Map.entry(ErrorCode.CATALOG_VARIANT_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.IDENTITY_CUSTOMER_NOT_FOUND, HttpStatus.NOT_FOUND),
 
-            Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
+            Map.entry(ErrorCode.IDENTITY_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED),
+Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
             Map.entry(ErrorCode.ORDERS_INVALID_TRANSITION, HttpStatus.CONFLICT),
             Map.entry(ErrorCode.PAYMENTS_ALREADY_REGISTERED, HttpStatus.CONFLICT),
 

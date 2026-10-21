@@ -105,7 +105,7 @@ $env:POSTGRES_DB='pizzeria'; $env:POSTGRES_USER='pizzeria_dev'; $env:POSTGRES_PA
 | `./mvnw spring-boot:run -Dspring-boot.run.profiles=local` | Arranca en local |
 | `./scripts/dev-up.ps1` | Levanta el entorno con Docker Compose |
 | `./scripts/dev-down.ps1` | Lo para |
-| `./scripts/db.ps1 -Accion seed` | Carga el catálogo de ejemplo (6 pizzas con los casos que interesan) |
+| `./scripts/db.ps1 -Accion seed` | Carga datos de ejemplo (categorías y productos) |
 | `./scripts/db.ps1 -Accion shell` | psql dentro del contenedor: el puerto de la base **no** se publica |
 | `./scripts/db.ps1 -Accion backup` | Vuelca la base a `infra/local/backups/` (no versionada) |
 | `./scripts/db.ps1 -Accion reset -Force` | Destruye el volumen y levanta de cero |
@@ -193,7 +193,7 @@ Detalle: [`docs/development/spring-conventions.md`](docs/development/spring-conv
 |---|---|
 | US-001 · Stack verificado sobre Java 21 | ✅ |
 | US-002 · Entorno local con Docker Compose | ✅ |
-| US-003 · Esquema de datos con Flyway (8 tablas) | ✅ |
+| US-003 · Esquema de datos con Flyway (9 tablas) | ✅ |
 | US-004 · Errores en `problem+json` con códigos estables | ✅ |
 | US-005 · Documentación OpenAPI con esquema `bearer` | ✅ |
 | US-006 · CI en GitHub Actions | ✅ |
@@ -201,7 +201,7 @@ Detalle: [`docs/development/spring-conventions.md`](docs/development/spring-conv
 | US-020…US-023 · Registro, login y autorización | Pendiente (S2 y S4) |
 | US-030…US-038 · Pedidos y cobro | Pendiente (S3, S4) |
 
-Seguimiento completo: [`docs/planning/backlog.md`](docs/planning/backlog.md)
+Seguimiento completo: `docs/`
 
 ---
 
@@ -211,9 +211,9 @@ Seguimiento completo: [`docs/planning/backlog.md`](docs/planning/backlog.md)
 2. **Dinero en COP, sin decimales**, con `RoundingMode.UNNECESSARY`: una fracción es un error, no algo
    que redondear.
 3. **Una clave ajena responde 404, no 403**, para no revelar que el recurso existe.
-4. **No hay forma pública de obtener el rol `ADMIN`.** El registro siempre fuerza `CUSTOMER`.
+4. **No hay forma pública de obtener el rol `ADMIN`.** El registro siempre fuerza `CLIENTE`.
 5. **Nada de secretos en el repositorio.** `.env` está en `.gitignore` y CI escanea el historial.
-6. **Un pedido no puede cobrarse dos veces.** Lo garantiza `UNIQUE (order_id)`, no el código.
+6. **Los importes se calculan en el servidor.** El cliente nunca envía precios.
 
 ---
 
