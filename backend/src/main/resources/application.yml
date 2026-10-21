@@ -37,6 +37,10 @@ spring:
     # Impide que alguien ejecute flyway:clean por descuido sobre una base con datos.
     clean-disabled: true
 
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-me-please-32-chars-minimum}
+  expiration-ms: 900000
+
 server:
   port: 8080
   error:
