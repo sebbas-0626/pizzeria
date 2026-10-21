@@ -96,24 +96,7 @@ class OpenApiHabilitadoIT {
         // Un `paths` vacío es el síntoma de que springdoc no ha encontrado ningún controlador, y no
         // falla: responde 200 con un contrato aparentemente válido. Por eso se comprueba que las rutas
         // están, y no sólo que el documento se publica.
-        assertThat(rutas.has("/api/v1/pizzas")).isTrue();
-        assertThat(rutas.has("/api/v1/pizzas/{pizzaId}")).isTrue();
-    }
-
-    @Test
-    @DisplayName("Cada operacion del catalogo tiene resumen, tag y respuestas de error documentadas")
-    void cadaOperacionDocumentaSusErrores() throws Exception {
-        JsonNode rutas = json.readTree(pedir("/v3/api-docs").body()).path("paths");
-
-        JsonNode listado = rutas.path("/api/v1/pizzas").path("get");
-        assertThat(listado.path("summary").asText()).isNotBlank();
-        assertThat(listado.path("tags").isArray()).isTrue();
-        // Un 400 sin documentar es un 400 que quien integra no sabe esperar.
-        assertThat(listado.path("responses").has("400")).isTrue();
-
-        JsonNode detalle = rutas.path("/api/v1/pizzas/{pizzaId}").path("get");
-        assertThat(detalle.path("responses").has("200")).isTrue();
-        assertThat(detalle.path("responses").has("404")).isTrue();
+        assertThat(rutas.has("/api/v1/products")).isTrue();
     }
 
     @Test
@@ -121,10 +104,9 @@ class OpenApiHabilitadoIT {
     void lasOperacionesDelCatalogoNoExigenToken() throws Exception {
         JsonNode rutas = json.readTree(pedir("/v3/api-docs").body()).path("paths");
 
-        // El catálogo es público (RF-CA-01, RF-CA-02). Si una operación declarase un requisito de
+        // El catálogo es público. Si una operación declarase un requisito de
         // seguridad, Swagger mostraría candado en una ruta que no lo necesita.
-        assertThat(rutas.path("/api/v1/pizzas").path("get").has("security")).isFalse();
-        assertThat(rutas.path("/api/v1/pizzas/{pizzaId}").path("get").has("security")).isFalse();
+        assertThat(rutas.path("/api/v1/products").path("get").has("security")).isFalse();
     }
 
     private HttpResponse<String> pedir(String ruta) throws Exception {

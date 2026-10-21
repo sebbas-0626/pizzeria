@@ -134,9 +134,9 @@ class LocalScriptsTest {
         String script = leer("db.ps1");
 
         assertThat(script)
-                .as("db.ps1 mira si la tabla pizzas existe antes de sembrar")
+                .as("db.ps1 mira si la tabla products existe antes de sembrar")
                 .contains("information_schema.tables")
-                .contains("table_name = 'pizzas'");
+                .contains("table_name = 'products'");
 
         // Y la comprobación va ANTES de cargar el fichero: mirarla después sólo cambiaría el momento
         // del error, no su causa.
