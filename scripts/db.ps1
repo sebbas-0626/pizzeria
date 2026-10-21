@@ -152,14 +152,14 @@ try {
             # vacía y el INSERT falla con `relation "pizzas" does not exist`: un mensaje de
             # PostgreSQL que no dice que lo que falta es levantar la aplicación. Se comprueba
             # antes de intentarlo y se dice qué hacer.
-            $existePizza = docker compose -f $compose exec -T db psql -U $usuario -d $base -tAc `
-                "SELECT count(*) FROM information_schema.tables WHERE table_name = 'pizzas';"
+            $existeProducto = docker compose -f $compose exec -T db psql -U $usuario -d $base -tAc `
+                "SELECT count(*) FROM information_schema.tables WHERE table_name = 'products';"
             if ($LASTEXITCODE -ne 0) {
                 throw 'No se puede leer el esquema. El contenedor de PostgreSQL no responde: levanta el entorno con ./scripts/dev-up.ps1 -Detach'
             }
-            if ($existePizza.Trim() -ne '1') {
+            if ($existeProducto.Trim() -ne '1') {
                 throw @"
-La tabla 'pizzas' no existe: las migraciones no estan aplicadas en '$base'.
+La tabla 'products' no existe: las migraciones no estan aplicadas en '$base'.
 
 El esquema lo crea la APLICACION al arrancar (Flyway), no este script. Con un volumen recien
 creado la base esta vacia y no hay nada que sembrar todavia. Haz esto:
@@ -175,7 +175,7 @@ creado la base esta vacia y no hay nada que sembrar todavia. Haz esto:
             if ($LASTEXITCODE -ne 0) {
                 throw 'No se han podido cargar los datos de ejemplo.'
             }
-            Write-Host 'Datos cargados. GET http://localhost:8080/api/v1/pizzas' -ForegroundColor Green
+            Write-Host 'Datos cargados. GET http://localhost:8080/api/v1/products' -ForegroundColor Green
         }
 
         'backup' {

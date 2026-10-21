@@ -1,8 +1,8 @@
 package com.pizzeria.shared.exception;
 
 import com.pizzeria.domain.exception.DomainException;
-import com.pizzeria.domain.exception.ErrorCode;
 import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
+import com.pizzeria.domain.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
