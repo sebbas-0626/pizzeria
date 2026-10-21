@@ -2,17 +2,17 @@ package com.pizzeria.infrastructure.adapter.out.persistence.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Entity
 @Table(name = "products")
 public class ProductEntity {
 
     @Id
-    private UUID id;
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @Column(name = "category_id", nullable = false)
-    private UUID categoryId;
+    private Long categoryId;
 
     @Column(nullable = false, length = 150)
     private String name;
@@ -30,10 +30,10 @@ public class ProductEntity {
     private boolean available;
 
     // getters y setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getCategoryId() { return categoryId; }
-    public void setCategoryId(UUID categoryId) { this.categoryId = categoryId; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getCategoryId() { return categoryId; }
+    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }

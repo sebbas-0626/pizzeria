@@ -4,13 +4,12 @@ import com.pizzeria.domain.model.Product;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface ProductRepositoryPort {
 
-    List<Product> findAll(UUID categoryId, boolean onlyAvailable);
+    List<Product> findAll(Long categoryId, boolean onlyAvailable);
 
-    Optional<Product> findById(UUID id);
+    Optional<Product> findById(Long id);
 
     Product save(Product product);
 }

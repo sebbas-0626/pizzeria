@@ -3,7 +3,6 @@ package com.pizzeria.domain.port.in;
 import com.pizzeria.domain.model.Product;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface ListProductsUseCase {
 
@@ -12,5 +11,5 @@ public interface ListProductsUseCase {
      * @param categoryId filtro opcional por categoría
      * @param onlyAvailable si true, solo productos disponibles
      */
-    List<Product> listProducts(UUID categoryId, boolean onlyAvailable);
+    List<Product> listProducts(Long categoryId, boolean onlyAvailable);
 }

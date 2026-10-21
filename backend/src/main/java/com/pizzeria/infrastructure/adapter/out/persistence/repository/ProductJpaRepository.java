@@ -6,9 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.UUID;
 
-public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID> {
+public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long> {
 
     @Query("""
         SELECT p FROM ProductEntity p
@@ -17,7 +16,7 @@ public interface ProductJpaRepository extends JpaRepository<ProductEntity, UUID>
         ORDER BY p.name ASC
     """)
     List<ProductEntity> findAllByFilters(
-        @Param("categoryId") UUID categoryId,
+        @Param("categoryId") Long categoryId,
         @Param("onlyAvailable") boolean onlyAvailable
     );
 }

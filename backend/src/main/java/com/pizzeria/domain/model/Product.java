@@ -1,11 +1,10 @@
 package com.pizzeria.domain.model;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 public record Product(
-    UUID id,
-    UUID categoryId,
+    Long id,
+    Long categoryId,
     String name,
     String description,
     BigDecimal price,

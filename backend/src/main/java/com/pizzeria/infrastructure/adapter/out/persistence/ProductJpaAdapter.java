@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Component
 public class ProductJpaAdapter implements ProductRepositoryPort {
@@ -20,7 +19,7 @@ public class ProductJpaAdapter implements ProductRepositoryPort {
     }
 
     @Override
-    public List<Product> findAll(UUID categoryId, boolean onlyAvailable) {
+    public List<Product> findAll(Long categoryId, boolean onlyAvailable) {
         return jpaRepository.findAllByFilters(categoryId, onlyAvailable)
             .stream()
             .map(this::toDomain)
@@ -28,7 +27,7 @@ public class ProductJpaAdapter implements ProductRepositoryPort {
     }
 
     @Override
-    public Optional<Product> findById(UUID id) {
+    public Optional<Product> findById(Long id) {
         return jpaRepository.findById(id).map(this::toDomain);
     }
 

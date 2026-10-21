@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -20,7 +19,7 @@ public class ListProductsService implements ListProductsUseCase {
     }
 
     @Override
-    public List<Product> listProducts(UUID categoryId, boolean onlyAvailable) {
+    public List<Product> listProducts(Long categoryId, boolean onlyAvailable) {
         return productRepository.findAll(categoryId, onlyAvailable);
     }
 }

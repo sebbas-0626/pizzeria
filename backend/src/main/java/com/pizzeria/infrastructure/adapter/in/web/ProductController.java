@@ -6,7 +6,6 @@ import com.pizzeria.infrastructure.adapter.in.web.dto.ProductResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -20,7 +19,7 @@ public class ProductController {
 
     @GetMapping
     public List<ProductResponse> list(
-        @RequestParam(required = false) UUID categoryId,
+        @RequestParam(required = false) Long categoryId,
         @RequestParam(defaultValue = "false") boolean onlyAvailable
     ) {
         return listProductsUseCase.listProducts(categoryId, onlyAvailable)
