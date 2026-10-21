@@ -1,4 +1,4 @@
-# ADR-0004 — Estructura de paquetes por capas, no por módulo
+    # ADR-0004 — Estructura de paquetes por capas, no por módulo
 
 - **Estado:** Aceptada
 - **Fecha:** 2026-10-15
@@ -44,7 +44,6 @@ com/pizzeria/
 ├── PizzeriaApplication.java
 ├── domain/                      ◄── NÚCLEO. Sólo java.*
 │   ├── model/                   Cliente, Producto, Pedido, LineaPedido
-│   │   └── vo/                  Email, Telefono, Precio
 │   ├── exception/               DomainException, ErrorCode, excepciones concretas
 │   └── port/
 │       ├── in/                  Puertos de entrada (los implementa application)

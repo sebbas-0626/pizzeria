@@ -13,12 +13,28 @@
           "name": "Registrar cliente",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@pizzeria.com\",\n  \"password\": \"Admin123!\",\n  \"nombre\": \"Admin Pizzería\",\n  \"telefono\": \"+573001234567\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","register"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            }
           }
         },
         {
@@ -40,12 +56,28 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@pizzeria.com\",\n  \"password\": \"Admin123!\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
           }
         }
       ]
@@ -60,11 +92,23 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/v1/pizzas?page=0&size=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["api","v1","pizzas"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pizzas"
+              ],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "20" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -76,8 +120,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/v1/pizzas/{{pizzaId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api","v1","pizzas","{{pizzaId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pizzas",
+                "{{pizzaId}}"
+              ]
             }
           }
         }
@@ -106,14 +157,31 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Pepperoni Especial\",\n  \"descripcion\": \"Pepperoni, queso extra y orégano\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas"
+              ]
+            }
           }
         },
         {
@@ -121,22 +189,57 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"nombre\": \"Pepperoni Especial XL\",\n  \"descripcion\": \"Pepperoni, doble queso y orégano\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas",
+                "{{pizzaId}}"
+              ]
+            }
           }
         },
         {
           "name": "Desactivar pizza (soft delete)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas",
+                "{{pizzaId}}"
+              ]
+            }
           }
         },
         {
@@ -159,14 +262,33 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"size\": \"MEDIUM\",\n  \"precio\": 15500\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","variantes"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas",
+                "{{pizzaId}}",
+                "variantes"
+              ]
+            }
           }
         },
         {
@@ -174,45 +296,134 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"precio\": 16000,\n  \"available\": true\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","variantes","{{variantId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas",
+                "{{pizzaId}}",
+                "variantes",
+                "{{variantId}}"
+              ]
+            }
           }
         },
         {
           "name": "Eliminar variante",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes/{{variantId}}", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","variantes","{{variantId}}"] }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/variantes/{{variantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas",
+                "{{pizzaId}}",
+                "variantes",
+                "{{variantId}}"
+              ]
+            }
           }
         },
         {
           "name": "Subir imagen (S3 / Floci)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": [], "description": "Imagen JPG/PNG de la pizza" }
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Imagen JPG/PNG de la pizza"
+                }
               ]
             },
-            "url": { "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/imagen", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","pizzas","{{pizzaId}}","imagen"] }
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/pizzas/{{pizzaId}}/imagen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "pizzas",
+                "{{pizzaId}}",
+                "imagen"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Productos — Público",
+      "item": [
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products"
+            }
           }
         }
       ]
     }
   ],
   "variable": [
-    { "key": "baseUrl",    "value": "http://localhost:8080" },
-    { "key": "token",      "value": "" },
-    { "key": "pizzaId",    "value": "" },
-    { "key": "variantId",  "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "pizzaId",
+      "value": ""
+    },
+    {
+      "key": "variantId",
+      "value": ""
+    }
   ]
 }
