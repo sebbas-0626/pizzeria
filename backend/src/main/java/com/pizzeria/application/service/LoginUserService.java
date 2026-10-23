@@ -10,6 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+/* este servicio es el que se encarga de validar las credenciales del usuario
+ * y devolver el usuario si las credenciales son válidas
+ * si las credenciales no son válidas lanza una excepción
+ * el servicio se llama LoginUserService y se implementa la interfaz LoginUserUseCase
+ * se inyectan las dependencias necesarias para el funcionamiento del servicio
+ * UserRepositoryPort para acceder a los usuarios y PasswordEncoder para codificar contraseñas
+ */
 public class LoginUserService implements LoginUserUseCase {
 
     private final UserRepositoryPort userRepository;
