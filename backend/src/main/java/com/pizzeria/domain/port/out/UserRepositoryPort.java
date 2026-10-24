@@ -9,6 +9,6 @@ import java.util.Optional;
 public interface UserRepositoryPort {
     Optional<User> findByEmail(String email);
     Optional<User> findById(Long id);
-    User save(User user); //save metodo para guardar un usuario o actu
+    User save(User user); //save metodo para guardar un usuario o actualizarlo
     boolean existsByEmail(String email);
 }
