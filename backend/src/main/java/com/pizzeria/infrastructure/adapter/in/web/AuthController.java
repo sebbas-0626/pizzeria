@@ -1,8 +1,6 @@
 package com.pizzeria.infrastructure.adapter.in.web;
 
-import com.pizzeria.application.service.LoginUserService;
-import com.pizzeria.application.service.LogoutUserService;
-import com.pizzeria.application.service.RegisterUserService;
+
 import com.pizzeria.domain.model.User;
 import com.pizzeria.domain.port.in.LoginUserUseCase;
 import com.pizzeria.domain.port.in.LogoutUserUseCase;
@@ -15,11 +13,15 @@ import com.pizzeria.shared.security.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
@@ -38,6 +40,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        log.info("Registering user with email: {}", request.email());
+        log.debug("Registering user: {}", request);
         User user = registerUserUseCase.register(
             request.email(), request.password(), request.firstName(), request.lastName(), request.phone());
         return ResponseEntity.status(HttpStatus.CREATED).body(new UserResponse(
@@ -46,6 +50,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        log.info("Logging in user with email: {}", request.email());
+        log.debug("Logging in user: {}", request);
         User user = loginUserUseCase.login(request.email(), request.password());
         String token = jwtService.generateToken(user.id(), user.email(), java.util.List.of(user.role()));
         return ResponseEntity.ok(new AuthResponse(token, user.id(), user.email(), user.role()));
@@ -53,6 +59,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
+        log.info("Logging out user: {}", authorization);
+        log.debug("Logout request: {}", authorization);
         if (authorization != null && authorization.startsWith("Bearer ")) {
             logoutUserUseCase.logout(authorization.substring(7));
         }
