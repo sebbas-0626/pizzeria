@@ -43,6 +43,16 @@ public class JwtService {
         return Long.valueOf(subject);
     }
 
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        Object claim = Jwts.parser().verifyWith(key).build()
+            .parseSignedClaims(token).getPayload().get("roles");
+        if (claim instanceof List<?> lista) {
+            return (List<String>) lista;
+        }
+        return List.of();
+    }
+
     public String extractJti(String token) {
         return Jwts.parser().verifyWith(key).build()
             .parseSignedClaims(token).getPayload().getId();

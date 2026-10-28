@@ -220,3 +220,4 @@ Seguimiento completo: `docs/`
 ## Licencia
 
 Uso interno. Backend de un proyecto de portafolio.
+opencode -s ses_e8ec051f7ffeI7lQq3IdZMgTsW
