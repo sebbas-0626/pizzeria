@@ -100,6 +100,7 @@ contrato y no cambia nunca.
 | `CATALOG_PIZZA_NOT_FOUND` | 404 | La pizza no existe |
 | `CATALOG_VARIANT_NOT_FOUND` | 404 | La variante no existe |
 | `IDENTITY_CUSTOMER_NOT_FOUND` | 404 | El cliente no existe |
+| `IDENTITY_ADDRESS_NOT_FOUND` | 404 | La dirección indicada en un pedido no existe **o es de otro cliente** |
 | `IDENTITY_EMAIL_ALREADY_REGISTERED` | 409 | El email ya está registrado |
 | `ORDERS_INVALID_TRANSITION` | 409 | La transición de estado no está permitida desde el estado actual |
 | `PAYMENTS_ALREADY_REGISTERED` | 409 | El pedido ya tiene un cobro |
@@ -136,6 +137,8 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 | `POST` | `/api/v1/auth/register` | Público | US-020 | Pendiente |
 | `POST` | `/api/v1/auth/login` | Público | US-021 | Pendiente |
 | `GET` | `/api/v1/customers/me` | Autenticado | US-023 | Pendiente |
+| `POST` | `/api/v1/addresses` | Autenticado | US-030 | ✅ **Hecho** |
+| `GET` | `/api/v1/addresses` | Autenticado | US-030 | ✅ **Hecho** |
 | `POST` | `/api/v1/orders` | Autenticado | US-030 | ✅ **Hecho** |
 | `GET` | `/api/v1/orders` | Autenticado | US-031 | ✅ **Hecho** |
 | `GET` | `/api/v1/orders/{orderId}` | Autenticado | US-032 | ✅ **Hecho** |
@@ -156,6 +159,7 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 | `/api/v1/admin/**` | `ADMIN` | **El catálogo**: crear pizzas, variantes, precios y disponibilidad (US-011, US-012, US-013, US-052) |
 | `/api/v1/employee/**` | `ADMIN` o `EMPLOYEE` | **Los pedidos del mostrador**: listar todos, confirmar, cancelar y registrar la recogida con el cobro (US-034…US-037) |
 | `/api/v1/auth/**` | Público | Registrarse y hacer login |
+| `/api/v1/addresses/**` | Autenticado | Las direcciones **del propio cliente** |
 | `/api/v1/orders/**` | Autenticado | Los pedidos **del propio cliente** |
 
 La separación no es cosmetics: **`/admin/**` es lo que cuesta dinero y `/employee/**` es lo que se hace
@@ -283,7 +287,75 @@ ni su hash**: son dos formas de filtrar el mismo secreto.
 > **El 409 permite enumerar correos.** Está aceptado en el MVP y anotado como deuda en `backlog.md`: la
 > alternativa —responder «registrado» siempre— deja al usuario sin saber por qué falla su alta.
 
-### 4.4 Lo que todavía no está en el catálogo
+### 4.4 Direcciones del cliente
+
+Las direcciones existen porque `POST /api/v1/orders` exige una `addressId` y el servidor no acepta un
+identificador que no sabe comprobar. No tienen historia propia: son el soporte de US-030.
+
+Ambas rutas son **del cliente autenticado**. El propietario sale del token y **nunca del cuerpo**, del
+mismo modo que un `role` no se toma del cuerpo en el registro.
+
+#### `POST /api/v1/addresses`
+
+Cuerpo:
+
+| Campo | Tipo | Obligatorio | Regla |
+|---|---|---|---|
+| `alias` | texto | sí | 1 a 50 caracteres |
+| `street` | texto | sí | 1 a 200 caracteres |
+| `city` | texto | sí | 1 a 100 caracteres |
+| `neighborhood` | texto | no | 100 caracteres como máximo. Ausente sale como `null` |
+| `reference` | texto | no | 500 caracteres como máximo. Ausente sale como `null` |
+
+> **No hay campo de propietario.** Un `userId` en el cuerpo devuelve **400** `MALFORMED_REQUEST`
+> diciendo el nombre del campo que sobra: la API rechaza los campos que no declara.
+
+Respuesta `201`:
+
+```json
+{
+  "id": 7,
+  "alias": "casa",
+  "street": "calle 1 # 2-3",
+  "city": "Bogota",
+  "neighborhood": "Centro",
+  "reference": "Portón verde",
+  "createdAt": "2026-10-30T03:30:00Z"
+}
+```
+
+| Situación | Respuesta |
+|---|---|
+| Falta `alias`, `street` o `city` | `400` `REQUEST_VALIDATION_FAILED`, con la lista de campos |
+| El cuerpo trae un campo que no existe | `400` `MALFORMED_REQUEST`, diciendo el nombre del campo |
+| No hay token | `401` |
+
+#### `GET /api/v1/addresses`
+
+`200` con las direcciones **del propio cliente**, de más reciente a más antigua. Nunca incluye las de
+otro cliente, y devuelve `[]` cuando no hay ninguna: un `404` obligaría al cliente a distinguir dos casos
+que para él son lo mismo.
+
+#### Su uso en `POST /api/v1/orders`
+
+| Situación | Respuesta |
+|---|---|
+| La dirección existe y es del cliente | `201` |
+| La dirección no existe | `404` `IDENTITY_ADDRESS_NOT_FOUND` |
+| La dirección existe, pero es de otro cliente | `404` `IDENTITY_ADDRESS_NOT_FOUND` |
+| Falta `addressId` | `400` `REQUEST_VALIDATION_FAILED` |
+
+> **Las dos filas de 404 son la misma respuesta a propósito**, el criterio de §3.3 aplicado a las
+> direcciones: si una dirección ajena devolviera algo distinto de una inexistente, bastaría con probar
+> identificadores para averiguar qué direcciones tienen otros clientes. El filtro va **en la consulta**
+> (`findByIdAndUserId`), nunca comparando después.
+
+> **`is_default` no sale por la API.** La columna existe en el esquema (`addresses.is_default`), pero
+> ningún requisito define todavía lo que significa que una dirección sea la predeterminada. Se guarda
+> siempre el valor por defecto y no se puede escribir: una marca que nadie interpreta sería una regla de
+> negocio inventada.
+
+### 4.5 Lo que todavía no está en el catálogo
 
 | Ausente | Llega con |
 |---|---|
