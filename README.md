@@ -221,3 +221,6 @@ Seguimiento completo: `docs/`
 
 Uso interno. Backend de un proyecto de portafolio.
 opencode -s ses_e8ec051f7ffeI7lQq3IdZMgTsW
+
+
+opencode -s ses_e75303588ffeHDX2l9IiLEeSJV
