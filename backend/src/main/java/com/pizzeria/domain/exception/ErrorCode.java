@@ -37,6 +37,8 @@ public enum ErrorCode {
     CATALOG_PIZZA_NOT_FOUND,
     CATALOG_VARIANT_NOT_FOUND,
     IDENTITY_CUSTOMER_NOT_FOUND,
+    /** La dirección indicada en un pedido no existe, o es de otro cliente. Nunca se distingue el caso ajeno. */
+    IDENTITY_ADDRESS_NOT_FOUND,
     IDENTITY_INVALID_CREDENTIALS,
 
     // ---- 409 · Conflicto con el estado actual ---------------------------------------

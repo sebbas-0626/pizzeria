@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
      * olvida esta fila, el estado por defecto avisa en lugar de fallar en silencio.
      *
      * <p>Se construye con {@code ofEntries} y no con {@code of} porque {@code Map.of} admite como
-     * mucho diez pares y el catálogo tiene trece. El límite está pensado para detectar a tiempo el
+     * mucho diez pares y el catálogo tiene dieciséis. El límite está pensado para detectar a tiempo el
      * mapa gigante que debería ser otro tipo de estructura.
      */
     private static final Map<ErrorCode, HttpStatus> ESTADOS = Map.ofEntries(
@@ -62,6 +62,7 @@ public class GlobalExceptionHandler {
             Map.entry(ErrorCode.CATALOG_PIZZA_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.CATALOG_VARIANT_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.IDENTITY_CUSTOMER_NOT_FOUND, HttpStatus.NOT_FOUND),
+            Map.entry(ErrorCode.IDENTITY_ADDRESS_NOT_FOUND, HttpStatus.NOT_FOUND),
 
             Map.entry(ErrorCode.IDENTITY_INVALID_CREDENTIALS, HttpStatus.UNAUTHORIZED),
 Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),

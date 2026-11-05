@@ -57,9 +57,23 @@ añadir variante (guarda su id) → actualizar. Para probar contra el seed, pon 
 
 ## Rutas que ya existen
 
-Sólo hay dos endpoints implementados (US-010): `GET /api/v1/pizzas` y `GET /api/v1/pizzas/{pizzaId}`.
-Las peticiones de `Auth` y de `Pizzas — Admin` responden `404` hasta que lleguen sus historias: son
-las que se van a ir rellenando según se implementen.
+La fuente de verdad es la tabla «Operaciones» de
+[`docs/architecture/api-contract.md`](../../docs/architecture/api-contract.md): ahí está cada ruta y
+si ya está hecha. Las peticiones de esta colección corresponden a esa lista, y las que faltan se van
+rellenando a medida que se cierra cada historia.
+
+## La carpeta Direcciones
+
+`POST /api/v1/orders` exige un `addressId` **que sea del cliente que hace la petición**. La carpeta
+`Direcciones` es la que lo pone a mano disponible:
+
+1. `Login` (rellena `{{token}}`).
+2. `Crear dirección` → guarda el `id` de la respuesta.
+3. `Listar mis direcciones` → ahí está el `id` que hay que pegar en `Crear pedido`.
+
+Si el `addressId` no existe o es de otro cliente, `POST /api/v1/orders` devuelve **404
+`IDENTITY_ADDRESS_NOT_FOUND`** — nunca un 500. Antes de que existiera esta validación devolvía
+`500 INTERNAL_ERROR` por una violación de clave ajena (`fk_orders_address`).
 
 ## Dónde está la verdad
 

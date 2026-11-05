@@ -398,6 +398,128 @@
                               ]
                  },
                  {
+                     "name":  "Direcciones",
+                     "item":  [
+                                  {
+                                      "name":  "Crear direccion",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/addresses"
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\n  \"alias\": \"casa\",\n  \"street\": \"calle 1 # 2-3\",\n  \"city\": \"Bogota\",\n  \"neighborhood\": \"Centro\",\n  \"reference\": \"Porton verde\"\n}"
+                                                               },
+                                                      "description":  "Da de alta una direccion del cliente autenticado. El propietario sale del token: un userId en el cuerpo devuelve 400."
+                                                  },
+                                      "response":  [
+                                                       {
+                                                           "name":  "201 Creada",
+                                                           "originalRequest":  {
+                                                                                   "method":  "POST",
+                                                                                   "header":  [
+                                                                                                  {
+                                                                                                      "key":  "Content-Type",
+                                                                                                      "value":  "application/json"
+                                                                                                  },
+                                                                                                  {
+                                                                                                      "key":  "Authorization",
+                                                                                                      "value":  "Bearer {{token}}"
+                                                                                                  }
+                                                                                              ],
+                                                                                   "url":  {
+                                                                                               "raw":  "{{baseUrl}}/api/v1/addresses"
+                                                                                           },
+                                                                                   "body":  {
+                                                                                                "mode":  "raw",
+                                                                                                "raw":  "{\n  \"alias\": \"casa\",\n  \"street\": \"calle 1 # 2-3\",\n  \"city\": \"Bogota\",\n  \"neighborhood\": \"Centro\",\n  \"reference\": \"Porton verde\"\n}"
+                                                                                            }
+                                                                               },
+                                                           "status":  "Created",
+                                                           "code":  201,
+                                                           "_postman_previewlanguage":  "json",
+                                                           "header":  [
+                                                                          {
+                                                                              "key":  "Content-Type",
+                                                                              "value":  "application/json"
+                                                                          }
+                                                                      ],
+                                                           "cookie":  [
+                 
+                                                                      ],
+                                                           "body":  "{\"id\":1,\"alias\":\"casa\",\"street\":\"calle 1 # 2-3\",\"city\":\"Bogota\",\"neighborhood\":\"Centro\",\"reference\":\"Porton verde\",\"createdAt\":\"2026-10-30T03:46:50.503123417Z\"}"
+                                                       }
+                                                   ]
+                                  },
+                                  {
+                                      "name":  "Listar mis direcciones",
+                                      "request":  {
+                                                      "method":  "GET",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/addresses"
+                                                              },
+                                                      "description":  "Devuelve solo las direcciones del cliente del token, de mas reciente a mas antigua. Sin ninguna, devuelve []."
+                                                  },
+                                      "response":  [
+                                                       {
+                                                           "name":  "200 OK",
+                                                           "originalRequest":  {
+                                                                                   "method":  "GET",
+                                                                                   "header":  [
+                                                                                                  {
+                                                                                                      "key":  "Content-Type",
+                                                                                                      "value":  "application/json"
+                                                                                                  },
+                                                                                                  {
+                                                                                                      "key":  "Authorization",
+                                                                                                      "value":  "Bearer {{token}}"
+                                                                                                  }
+                                                                                              ],
+                                                                                   "url":  {
+                                                                                               "raw":  "{{baseUrl}}/api/v1/addresses"
+                                                                                           },
+                                                                                   "body":  null
+                                                                               },
+                                                           "status":  "OK",
+                                                           "code":  200,
+                                                           "_postman_previewlanguage":  "json",
+                                                           "header":  [
+                                                                          {
+                                                                              "key":  "Content-Type",
+                                                                              "value":  "application/json"
+                                                                          }
+                                                                      ],
+                                                           "cookie":  [
+                 
+                                                                      ],
+                                                           "body":  "[{\"id\":1,\"alias\":\"casa\",\"street\":\"calle 1 # 2-3\",\"city\":\"Bogota\",\"neighborhood\":\"Centro\",\"reference\":\"Porton verde\",\"createdAt\":\"2026-10-30T03:46:50.503123Z\"}]"
+                                                       }
+                                                   ]
+                                  }
+                              ]
+                 },
+                 {
                      "name":  "Pedidos",
                      "item":  [
                                   {
@@ -422,6 +544,65 @@
                                                                    "raw":  "{\n  \"addressId\": 1,\n  \"paymentMethod\": \"CASH\",\n  \"notes\": \"Sin cebolla\",\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 2, \"notes\": \"\" }\n  ]\n}"
                                                                }
                                                   }
+                                  },
+                                  {
+                                      "name":  "Crear pedido con direccion inexistente (404)",
+                                      "request":  {
+                                                      "method":  "POST",
+                                                      "header":  [
+                                                                     {
+                                                                         "key":  "Content-Type",
+                                                                         "value":  "application/json"
+                                                                     },
+                                                                     {
+                                                                         "key":  "Authorization",
+                                                                         "value":  "Bearer {{token}}"
+                                                                     }
+                                                                 ],
+                                                      "url":  {
+                                                                  "raw":  "{{baseUrl}}/api/v1/orders"
+                                                              },
+                                                      "body":  {
+                                                                   "mode":  "raw",
+                                                                   "raw":  "{\"addressId\": 999, \"paymentMethod\": \"CASH\", \"items\": [{\"productId\": 1, \"quantity\": 2}]}"
+                                                               },
+                                                      "description":  "El addressId no existe o es de otro cliente: 404 IDENTITY_ADDRESS_NOT_FOUND. Nunca 500."
+                                                  },
+                                      "response":  [
+                                                       {
+                                                           "name":  "404 No Found",
+                                                           "originalRequest":  {
+                                                                                   "method":  "POST",
+                                                                                   "header":  [
+                                                                                                  {
+                                                                                                      "key":  "Content-Type",
+                                                                                                      "value":  "application/json"
+                                                                                                  },
+                                                                                                  {
+                                                                                                      "key":  "Authorization",
+                                                                                                      "value":  "Bearer {{token}}"
+                                                                                                  }
+                                                                                              ],
+                                                                                   "url":  {
+                                                                                               "raw":  "{{baseUrl}}/api/v1/orders"
+                                                                                           },
+                                                                                   "body":  null
+                                                                               },
+                                                           "status":  "Not Found",
+                                                           "code":  404,
+                                                           "_postman_previewlanguage":  "json",
+                                                           "header":  [
+                                                                          {
+                                                                              "key":  "Content-Type",
+                                                                              "value":  "application/json"
+                                                                          }
+                                                                      ],
+                                                           "cookie":  [
+                                  
+                                                                      ],
+                                                           "body":  "{\"detail\":\"Direccion no encontrada: 999\",\"instance\":\"/api/v1/orders\",\"status\":404,\"title\":\"Not Found\",\"type\":\"https://pizzeria.local/errors/IDENTITY_ADDRESS_NOT_FOUND\",\"code\":\"IDENTITY_ADDRESS_NOT_FOUND\",\"timestamp\":\"2026-10-30T03:47:23.597212917Z\",\"traceId\":\"d0b234e0-bfad-4e21-a796-4b62a20a998a\"}"
+                                                       }
+                                                   ]
                                   },
                                   {
                                       "name":  "Listar mis pedidos",

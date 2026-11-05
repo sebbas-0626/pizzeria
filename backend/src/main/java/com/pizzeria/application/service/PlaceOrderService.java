@@ -1,5 +1,6 @@
 package com.pizzeria.application.service;
 
+import com.pizzeria.domain.exception.AddressNotFoundException;
 import com.pizzeria.domain.exception.ProductNotFoundException;
 import com.pizzeria.domain.exception.ProductNotAvailableException;
 import com.pizzeria.domain.model.Order;
@@ -7,6 +8,7 @@ import com.pizzeria.domain.model.PaymentMethod;
 import com.pizzeria.domain.model.Product;
 import com.pizzeria.domain.model.RequestedOrderLine;
 import com.pizzeria.domain.port.in.PlaceOrderUseCase;
+import com.pizzeria.domain.port.out.AddressRepositoryPort;
 import com.pizzeria.domain.port.out.OrderRepositoryPort;
 import com.pizzeria.domain.port.out.ProductRepositoryPort;
 import org.springframework.stereotype.Service;
@@ -22,15 +24,25 @@ public class PlaceOrderService implements PlaceOrderUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final OrderRepositoryPort orderRepository;
+    private final AddressRepositoryPort addressRepository;
 
-    public PlaceOrderService(ProductRepositoryPort productRepository, OrderRepositoryPort orderRepository) {
+    public PlaceOrderService(ProductRepositoryPort productRepository,
+                             OrderRepositoryPort orderRepository,
+                             AddressRepositoryPort addressRepository) {
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
+        this.addressRepository = addressRepository;
     }
 
     @Override
     public Order placeOrder(Long userId, Long addressId, PaymentMethod paymentMethod, String notes,
                            List<RequestedOrderLine> items) {
+        // Primero la dirección: si no es del cliente, el pedido no se toca. El filtro va en la
+        // consulta (findByIdAndUserId), de modo que una dirección ajena y una inexistente devuelven
+        // lo mismo y no se puede averiguar qué identificadores tienen direcciones de otros.
+        addressRepository.findByIdAndUserId(addressId, userId)
+            .orElseThrow(() -> new AddressNotFoundException(addressId));
+
         // Valida cada producto contra el catalogo y congela su precio.
         Map<Long, Product> productsById = new HashMap<>();
         for (RequestedOrderLine line : items) {
