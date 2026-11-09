@@ -344,6 +344,11 @@ pieza de despliegue está bloqueada. Conviene separarlos porque son dos decision
                                           US-072 requiere autorización escrita
 ```
 
+> **Estado (2026-11-08).** El único workflow de CD que existe es `.github/workflows/cd.yml`, es
+> **manual** (`workflow_dispatch`) y **no despliega**: comprueba que Floci y el ECR emulado funcionan,
+> que es la infraestructura que el despliegue necesitará. Lo que falta para convertirlo en un CD real
+> está en [`docs/development/cd-revision.md`](../development/cd-revision.md) §5 y §8.
+
 ### Por qué dos workflows y no uno
 
 | Decisión | Motivo |
@@ -377,7 +382,7 @@ Actualiza el parche, nunca la línea de versión: subir de línea es una decisi�
 
 | Historia | Qué falta | Estado |
 |---|---|---|
-| **US-070** | Imagen multi-stage `eclipse-temurin:21-jre`, usuario no root, tag fijo | Pendiente. Hoy la app corre con la imagen de Maven |
+| **US-070** | Imagen multi-stage (`maven:3.10.0-eclipse-temurin-21` → `eclipse-temurin:21-jre`), usuario no root, `HEALTHCHECK` real | ✅ Hecha. La app local sigue con la imagen de Maven por recarga en caliente |
 | **US-071** | Etapa de despliegue reproducible, etiqueta de versión y artefacto trazable | Pendiente |
 | **US-072** | Despliegue en **EC2** (contenedor) | 🔴 **Bloqueado**: requiere autorización escrita del responsable ([`architecture.md` §2.7](architecture.md), [`backlog.md`](../planning/backlog.md)) |
 | **US-073** | Tests de humo y de rollback contra el entorno desplegado | Pendiente |
