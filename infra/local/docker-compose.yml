@@ -4,9 +4,9 @@
 #
 # Decisiones que no son evidentes y conviene no deshacer sin leer el porqué:
 #
-#   - La app se ejecuta con la imagen de Maven, NO con una imagen propia. El Dockerfile
-#     multi-stage de producción es US-070 (Sprint 8). Aquí se quiere recargar código al
-#     instante, y la imagen de Maven da eso sin compilar dos veces.
+#   - La app se ejecuta con la imagen de Maven, NO con la imagen de producción. El Dockerfile
+#     multi-stage existe (`backend/Dockerfile`, US-070), pero aquí se quiere recargar código
+#     al instante, y la imagen de Maven da eso sin reconstruir la imagen en cada cambio.
 #
 #   - Se usa el `mvn` que ya viene en la imagen, no `./mvnw`. El wrapper verifica el
 #     SHA-256 de la distribución y para eso necesita el comando `unzip`, que esta imagen
