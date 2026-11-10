@@ -137,6 +137,28 @@ class WorkflowFilesTest {
         }
     }
 
+    @Test
+    @DisplayName("La configuracion de Gitleaks añade excepciones, no apaga el escaner")
+    void laConfiguracionDeGitleaksNoApagaElEscaner() throws Exception {
+        Path configuracion = RAIZ.resolve(".gitleaks.toml");
+        assertThat(Files.exists(configuracion)).as("existe %s", configuracion).isTrue();
+
+        String toml = Files.readString(configuracion);
+
+        // `useDefault = true` es la diferencia entre "añado una excepción a las reglas que ya
+        // existen" y "mis reglas sustituyen a las de por defecto". Sin esa línea, gitleaks deja
+        // de buscar lo que busca siempre y el job sigue en verde sin haber mirado nada.
+        assertThat(toml).as("extiende las reglas por defecto").contains("useDefault = true");
+
+        // Tan malo como desactivar una regla es dejarla inerte: una lista blanca por `commits`
+        // silencia el commit entero, y una por `paths`, el archivo entero. Con eso dentro, el día
+        // que se cuele un secreto de verdad nadie se entera. La excepción va por línea.
+        assertThat(toml).as("no desactiva reglas").doesNotContain("disabledRules");
+        assertThat(toml).as("no silencia commits enteros").doesNotContain("commits =");
+        assertThat(toml).as("no silencia archivos enteros").doesNotContain("paths =");
+        assertThat(toml).as("compara contra la línea completa").contains("regexTarget = \"line\"");
+    }
+
     private Map<String, Object> leer(Path fichero) throws Exception {
         try (InputStream entrada = Files.newInputStream(fichero)) {
             Map<String, Object> mapa = new Yaml().load(entrada);

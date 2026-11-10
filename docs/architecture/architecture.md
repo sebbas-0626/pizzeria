@@ -162,7 +162,7 @@ Todas las versiones de esta tabla son **verificadas**: se leyeron del árbol de 
 | Componente | Tecnología | Versión | Entra en | Nota |
 |---|---|---|---|---|
 | Entorno local | Docker Compose | — | US-002 | PostgreSQL **sin** puerto publicado en el host |
-| Imagen de build | `eclipse-temurin:21-jdk` | 21 | US-070 | Multi-stage, usuario no root, tag fijo |
+| Imagen de build | `maven:3.10.0-eclipse-temurin-21` | 21 · Maven 3.10.0 | US-070 | Multi-stage, usuario no root, tag fijo. Se usa la imagen de Maven y no `21-jdk` + wrapper porque el wrapper necesita `unzip` (ver `ci.yml`) |
 | Imagen de runtime | `eclipse-temurin:21-jre` | 21 | US-070 | Alternativa: `21-jre-alpine`, `21-jdk-ubi9-minimal` o runtime con `jlink` |
 | CI | GitHub Actions `actions/setup-java@v5` | — | US-006 | `distribution: temurin`, `java-version: '21'`, `cache: maven` |
 | Actualizaciones | Dependabot (Maven y Docker) | — | US-006 | Actualiza el parche, no la línea de versión |

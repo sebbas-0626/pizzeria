@@ -1,0 +1,10 @@
+target/
+.git/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+data/
+# Nunca debe entrar en el contexto de build: puede contener credenciales (AGENTS.md §4.7).
+.env
+*.log

@@ -1,0 +1,136 @@
+name: CD · Laboratorio Floci
+
+# Por qué este workflow NO despliega todavía:
+#
+#   - US-070 (Dockerfile de producción) ya está hecha: `backend/Dockerfile` es multi-stage, corre
+#     como usuario sin privilegios y tiene healthcheck real.
+#   - US-071 (publicar la imagen en ECR) y US-072 (desplegar) no. ADR-0006 y el backlog marcan
+#     US-072 como bloqueada hasta que haya autorización escrita para tocar AWS real.
+#   - El despliegue decidido en `docs/development/aws-local.md` §2 es un contenedor en EC2 con
+#     systemd, no ECS. Un YAML no es sitio para cambiar esa decisión: haría falta un ADR.
+#
+# Por eso el disparador es manual y el trabajo se limita a comprobar que el laboratorio que hará
+# falta (Floci + ECR de verdad) funciona. Cuando se complete US-071, este es el sitio donde se
+# sustituye la imagen de prueba por el build de `backend/` y se publica el tag con el SHA.
+#
+# Decisiones que sí se conservan del CD anterior:
+#
+#   - `permissions: contents: read`: el job no escribe en el repositorio.
+#   - `timeout-minutes`: un `docker login` colgado no puede consumir seis horas de runner.
+#   - Todos los comandos `aws` llevan `--endpoint-url` explícito. El CLI de Linux a veces ignora
+#     `AWS_ENDPOINT_URL`; ser explícito evita que un comando acabe hablando con AWS real.
+#   - Floci fijado por versión (`2.4.0`), nunca `latest`. Ver `docs/development/floci-laboratorio.md`.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # En un despliegue real, cancelar a mitad deja el registro o el servicio a medias. Aquí el job es
+  # idempotente y se cancela sin daño, pero se deja sin cancelación por coherencia con el futuro CD.
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  laboratorio:
+    name: Humo de Floci y ECR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localhost:4566
+      FLOCI_IMAGE: floci/floci:2.4.0
+      REPO_NAME: pizzeria-backend
+      # Imagen conocida y pequeña, sólo para probar la ruta de datos del registro.
+      IMAGE: public.ecr.aws/docker/library/alpine:3.20
+
+    steps:
+      - name: Repositorio
+        uses: actions/checkout@v7
+
+      # Si alguien cambia el endpoint por el de AWS real, el job se para antes de crear nada.
+      - name: "Salvaguarda: el endpoint es local"
+        run: |
+          case "$AWS_ENDPOINT_URL" in
+            http://localhost:*) echo "Endpoint local: $AWS_ENDPOINT_URL" ;;
+            *) echo "::error::AWS_ENDPOINT_URL no es local: $AWS_ENDPOINT_URL"; exit 1 ;;
+          esac
+
+      - name: AWS CLI
+        run: aws --version
+
+      # Floci no puede ser un `services:`: ECR arranca un contenedor `registry:2` aparte y necesita
+      # estar en una red compartida con Floci. Sin red, `docker login` devuelve 503. Además hace
+      # falta el socket: ECR, ECS y EC2 lanzan contenedores Docker reales.
+      - name: Arrancar Floci
+        run: |
+          docker network create floci-net
+          docker run -d --name floci \
+            --network floci-net \
+            -p 4566:4566 \
+            -e FLOCI_SERVICES_ECR_URI_STYLE=path \
+            -e FLOCI_SERVICES_ECR_DOCKER_NETWORK=floci-net \
+            -e FLOCI_STORAGE_MODE=memory \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            "$FLOCI_IMAGE"
+
+      # La imagen nativa no trae `curl` ni `wget`: se espera con el propio CLI de AWS, que es lo que
+      # de verdad se va a usar después.
+      - name: Esperar a Floci
+        run: |
+          for intento in $(seq 1 30); do
+            if aws --endpoint-url "$AWS_ENDPOINT_URL" s3 ls >/dev/null 2>&1; then
+              echo "Floci responde tras $intento intento(s)."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Floci no respondió en 60 s"
+          docker logs floci
+          exit 1
+
+      - name: Crear repositorio ECR y capturar su URI
+        id: ecr
+        run: |
+          if ! aws --endpoint-url "$AWS_ENDPOINT_URL" ecr describe-repositories \
+                 --repository-name "$REPO_NAME" >/dev/null 2>&1; then
+            aws --endpoint-url "$AWS_ENDPOINT_URL" ecr create-repository \
+              --repository-name "$REPO_NAME" >/dev/null
+          fi
+          URI=$(aws --endpoint-url "$AWS_ENDPOINT_URL" ecr describe-repositories \
+                  --repository-name "$REPO_NAME" --query 'repositories[0].repositoryUri' --output text)
+          echo "URI=$URI"
+          echo "uri=$URI" >> "$GITHUB_OUTPUT"
+
+      - name: Login a ECR
+        run: |
+          REGISTRY="${AWS_ENDPOINT_URL#http://}"
+          aws --endpoint-url "$AWS_ENDPOINT_URL" ecr get-login-password \
+            | docker login --username AWS --password-stdin "$REGISTRY"
+
+      - name: Push de prueba
+        run: |
+          docker pull "$IMAGE"
+          docker tag "$IMAGE" "${{ steps.ecr.outputs.uri }}:lab-${{ github.run_id }}"
+          docker push "${{ steps.ecr.outputs.uri }}:lab-${{ github.run_id }}"
+
+      - name: Verificar el tag en ECR
+        run: |
+          TAG="lab-${GITHUB_RUN_ID}"
+          aws --endpoint-url "$AWS_ENDPOINT_URL" ecr describe-images \
+            --repository-name "$REPO_NAME" \
+            --image-ids imageTag="$TAG" \
+            --query 'imageDetails[0].{tags:imageTags,digest:imageDigest,size:imageSizeInBytes}'
+
+      - name: Limpieza
+        if: always()
+        run: |
+          docker rm -f floci || true
+          # El registro que arranca Floci por detrás no se va con el contenedor principal.
+          docker rm -f floci-aws-ecr-registry || true
+          docker network rm floci-net || true

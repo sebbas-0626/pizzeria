@@ -1,0 +1,47 @@
+# Configuración de Gitleaks del repositorio · US-006
+#
+# Gitleaks la autodetecta: sin `--config`, sin `GITLEAKS_CONFIG` y sin configurar nada en
+# `.github/workflows/ci.yml`, el binario busca `.gitleaks.toml` en el directorio que escanea.
+# Eso es lo que hace `gitleaks/gitleaks-action@v3`, que fija **gitleaks 8.24.3**.
+#
+# Dos consecuencias de esa versión que no son obvias:
+#
+#   - La clave global es `[allowlist]`. `[[allowlists]]` (la forma nueva, con `targetRules`)
+#     llegó en 8.25 y aquí sería un error de configuración. Si se sube `GITLEAKS_VERSION`,
+#     se puede migrar.
+#   - `[extend] useDefault = true` mantiene **todas** las reglas por defecto. Este archivo
+#     no desactiva ninguna: sólo añade una excepción puntual. Un archivo de configuración
+#     que apaga el escáner «arregla» el CI y deja el repositorio sin vigilancia.
+
+title = "Pizzeria · configuración de Gitleaks"
+
+[extend]
+useDefault = true
+
+# --------------------------------------------------------------------------------------------
+# Falsos positivos demostrables
+#
+# Criterio: una entrada aquí exige que se pueda señalar la línea exacta que lo provoca y por
+# qué no es una credencial. Si hay una duda razonable, se corrige el código o se rota el
+# secreto; no se toca este archivo.
+# --------------------------------------------------------------------------------------------
+
+[allowlist]
+description = '''
+backend/Dockerfile documenta, en un comentario, el `docker run` con el que se levanta la
+imagen y qué variable de entorno hay que pasarle. El valor que aparece para `JWT_SECRET`
+—"cambia-esto-por-un-secreto-de-32-caracteres"— es una instrucción para quien lee, no una
+credencial: no autentica nada y no existe fuera de ese comentario.
+
+La regla `generic-api-key` lo marca por su entropía (3.72), que es alta sólo porque el texto
+lleva guiones. El hallazgo está en el historial (commit 282ec2a), así que reescribir la línea
+no lo elimina: hay que autorizarlo.
+
+La comparación es contra la LÍNEA COMPLETA y con el texto literal completo, no contra
+"JWT_SECRET=" a secas. Así la excepción no tapa un `JWT_SECRET=` real que se commitee mañana,
+ni en este archivo ni en ningún otro.
+'''
+regexTarget = "line"
+regexes = [
+  '''-e JWT_SECRET=cambia-esto-por-un-secreto-de-32-caracteres''',
+]

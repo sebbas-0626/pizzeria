@@ -23,11 +23,18 @@
 **El puerto de PostgreSQL no se publica**, y es deliberado (criterio de aceptación de US-002): nada del
 host alcanza la base de datos. Sólo se publica la API, en el 8080.
 
-### Por qué la app usa la imagen de Maven y no un Dockerfile
+### Por qué la app local usa la imagen de Maven y no el Dockerfile
 
-No hay Dockerfile propio todavía: el multi-stage de producción es **US-070**, en el sprint 8. Para
-desarrollar se quiere recargar código al instante, y `spring-boot:run` con el fuente montado lo da sin
-compilar dos veces.
+El Dockerfile de producción **ya existe** (`backend/Dockerfile`, US-070): es multi-stage, corre con
+JRE 21 como usuario sin privilegios y sirve para publicar la imagen. Aquí **no se usa a propósito**:
+en desarrollo se quiere recargar código al instante, y `spring-boot:run` con el fuente montado lo da
+sin compilar dos veces ni reconstruir la imagen en cada cambio.
+
+Para construir y probar la imagen de producción:
+
+```powershell
+docker build -t pizzeria-backend:local backend/
+```
 
 **Consecuencia práctica que sorprende:** después de cambiar código, `--build` **no hace nada** y la
 aplicación sigue con la versión anterior. Hay que reiniciar el servicio:

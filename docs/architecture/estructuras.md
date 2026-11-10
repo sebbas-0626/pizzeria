@@ -344,6 +344,11 @@ pieza de despliegue está bloqueada. Conviene separarlos porque son dos decision
                                           US-072 requiere autorización escrita
 ```
 
+> **Estado (2026-11-08).** El único workflow de CD que existe es `.github/workflows/cd.yml`, es
+> **manual** (`workflow_dispatch`) y **no despliega**: comprueba que Floci y el ECR emulado funcionan,
+> que es la infraestructura que el despliegue necesitará. Lo que falta para convertirlo en un CD real
+> está en [`docs/development/cd-revision.md`](../development/cd-revision.md) §5 y §8.
+
 ### Por qué dos workflows y no uno
 
 | Decisión | Motivo |
@@ -356,7 +361,7 @@ pieza de despliegue está bloqueada. Conviene separarlos porque son dos decision
 | Job | Qué hace | Por qué ese detalle |
 |---|---|---|
 | **`verify`** | `setup-java` Temurin **21** con `cache: maven`, instala `unzip`, y corre `./mvnw -B -ntp verify` en `backend/` | El Enforcer ya falla con otro JDK, pero se fija `java-version` igualmente: compilar con 25 y probar con 21 es exactamente el «funciona en mi máquina» que evita ADR-0010. El `unzip` hace falta porque el wrapper valida el SHA-256 y en imágenes mínimas no está |
-| **`secrets`** | Gitleaks con `fetch-depth: 0` | Sin historial completo, sólo ve el commit actual: un secreto mergeado la semana pasada pasaría el escaneo sin que nadie se entere |
+| **`secrets`** | Gitleaks con `fetch-depth: 0` y la configuración de `.gitleaks.toml` | Sin historial completo, sólo ve el commit actual: un secreto mergeado la semana pasada pasaría el escaneo sin que nadie se entere. El `.gitleaks.toml` extiende las reglas por defecto y sólo añade excepciones puntuales de falsos positivos, ceñidas a una línea concreta; `WorkflowFilesTest` comprueba que no desactive reglas ni silencie commits o archivos enteros |
 | **`compose`** | Levanta el entorno local documentado con `--wait` y lo comprueba con `curl` | Un pipeline que no se ejecuta parece un pipeline que pasa. Además comprueba los criterios de US-005 en CI y no sólo en local: `/v3/api-docs` responde 200 y `/actuator/env` responde 404 |
 
 ### Las cuatro decisiones que hacen que esto sea seguro
@@ -377,7 +382,7 @@ Actualiza el parche, nunca la línea de versión: subir de línea es una decisi�
 
 | Historia | Qué falta | Estado |
 |---|---|---|
-| **US-070** | Imagen multi-stage `eclipse-temurin:21-jre`, usuario no root, tag fijo | Pendiente. Hoy la app corre con la imagen de Maven |
+| **US-070** | Imagen multi-stage (`maven:3.10.0-eclipse-temurin-21` → `eclipse-temurin:21-jre`), usuario no root, `HEALTHCHECK` real | ✅ Hecha. La app local sigue con la imagen de Maven por recarga en caliente |
 | **US-071** | Etapa de despliegue reproducible, etiqueta de versión y artefacto trazable | Pendiente |
 | **US-072** | Despliegue en **EC2** (contenedor) | 🔴 **Bloqueado**: requiere autorización escrita del responsable ([`architecture.md` §2.7](architecture.md), [`backlog.md`](../planning/backlog.md)) |
 | **US-073** | Tests de humo y de rollback contra el entorno desplegado | Pendiente |

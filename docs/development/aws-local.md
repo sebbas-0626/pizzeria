@@ -50,7 +50,7 @@ Floci soporta más de cien servicios. Este proyecto usa **siete**, y no hay que 
 |---|---|
 | **Lambda** | El proyecto no es serverless. La lógica va en el contenedor |
 | **DynamoDB** | La base de datos es **PostgreSQL**. RDBMS relacional, elegido y documentado |
-| **ECS / EKS** | El despliegue es un contenedor en EC2, orquestado por systemd |
+| **ECS / EKS** | El despliegue es un contenedor en EC2, orquestado por systemd. Floci **sí** emula ECS desde 2.4.0 (verificado), pero el proyecto no lo usa: si alguna vez se cambia, exige ADR nuevo. Ver [`cd-revision.md`](cd-revision.md) §4 |
 | **RDS** | Se **evalúa** en US-082, no se usa. En local corre PostgreSQL en Docker |
 | **CloudFront** | US-083 está marcada **Descartada**: el frontend no entra en el MVP |
 | **Secrets Manager** | Sin credenciales de AWS que gestar mientras no haya despliegue real |
@@ -72,14 +72,35 @@ que se pide explícitamente** con un segundo `-f`.
 ```yaml
 # Extracto del futuro infra/local/docker-compose.aws.yml (US-051).
 floci:
-  image: floci/floci:<VERSION_FIJADA>
+  image: floci/floci:2.4.0
   ports:
     - "4566:4566"
   environment:
     FLOCI_SERVICES_EC2_INSTANCE_RESOURCE_LIMITS: "false"
+    # En Windows `*.localhost` no resuelve; `path` da URIs que sí funcionan.
+    FLOCI_SERVICES_ECR_URI_STYLE: path
+    # ECR/ECS/EC2 lanzan contenedores reales: el registro debe estar en esta misma red.
+    FLOCI_SERVICES_ECR_DOCKER_NETWORK: floci-net
+    # Sin esto la imagen arranca en `memory` y pierde todo al reiniciar.
+    FLOCI_STORAGE_MODE: hybrid
   volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
     - floci-data:/app/data
+  networks:
+    - floci-net
+
+networks:
+  floci-net:
+    # `name:` fija el nombre exacto; sin él Compose lo prefija con el proyecto (`pizzeria_`)
+    # y la variable FLOCI_SERVICES_ECR_DOCKER_NETWORK apuntaría a una red inexistente.
+    name: floci-net
+
+volumes:
+  floci-data:
 ```
+
+> En el YAML el socket va como `/var/run/docker.sock`; el `//var/run/...` sólo hace falta cuando se
+> pasa el montaje por PowerShell (`docker run -v`).
 
 ```powershell
 docker compose -f infra/local/docker-compose.yml -f infra/local/docker-compose.aws.yml up -d
@@ -95,8 +116,19 @@ docker compose -f infra/local/docker-compose.yml ps   # sólo db y app
 ### ⚠️ El tag `latest` está prohibido aquí
 
 La documentación de Floci usa `floci/floci:latest`, y este proyecto **prohíbe los tags `latest`** para
-que dos máquinas construyan lo mismo. Hay que fijar una versión exacta. **Cuál usar todavía no está
-verificado**: es la primera tarea de US-051.
+que dos máquinas construyan lo mismo. **Versión verificada y fijada: `floci/floci:2.4.0`**
+(digest `sha256:5ee85db604c4aa74ac76e07ea5cc83086f37bb472bf3dbb97e34019e48efae9c`).
+
+### La versión real del laboratorio
+
+El comando de arranque, las pruebas ejecutadas y las trampas de Windows están verificados en
+[`floci-laboratorio.md`](floci-laboratorio.md). En resumen, tres cosas que no se ven en el YAML:
+
+- La imagen **no trae `curl`**: un healthcheck con `curl` deja el contenedor `unhealthy` para siempre.
+  Usar `bash -c 'exec 3<>/dev/tcp/127.0.0.1/4566'`.
+- ECR necesita el **socket de Docker** y el registro en una **red compartida**; sin eso, `/v2/`
+  responde `503`.
+- Montar el volumen **no persiste** nada si no se pone `FLOCI_STORAGE_MODE`.
 
 ---
 
@@ -182,16 +214,38 @@ En una máquina de 8 núcleos:
 Si molesta: `FLOCI_SERVICES_EC2_INSTANCE_RESOURCE_LIMITS=false`. **Con el límite puesto** es más fiel a
 EC2; **sin él** el arranque nunca falla por falta de recursos.
 
+**Verificado el 2026-11-08:** `RunInstances` lanza un contenedor Docker real (150 MB la primera vez,
+porque un AMI desconocido cae a `amazonlinux:2023`) y publica SSH en el host. En Docker Desktop la IP
+privada **no es alcanzable desde Windows**; Floci lo avisa en el log y deja los puertos en
+`127.0.0.1`. Para probar la instancia hay que usar el puerto publicado, no la IP.
+
 ### ECR: se puede probar `docker push` de verdad
 
 Floci emula ECR con un **registro OCI real** detrás. El cliente `docker` estándar funciona sin
-configurar el demonio, porque Floci devuelve URIs que resuelven a loopback.
+configurar el demonio, porque Floci devuelve URIs que resuelven a loopback. **Verificado el
+2026-11-08**, con dos condiciones que la documentación del fabricante no deja claras:
+
+1. **Socket de Docker y red compartida.** Sin socket, ECR responde «no Docker daemon is reachable
+   from Floci». Con socket pero con el registro en `bridge`, `docker login` devuelve `503`: Floci no
+   resuelve `floci-aws-ecr-registry` por nombre. Hay que arrancar con `--network floci-net` y
+   `FLOCI_SERVICES_ECR_DOCKER_NETWORK=floci-net`.
+2. **En Windows, `*.localhost` no resuelve.** Hay que usar `FLOCI_SERVICES_ECR_URI_STYLE=path`.
 
 ```bash
-aws ecr create-repository --repository-name pizzeria/app --endpoint-url $AWS_ENDPOINT_URL
-aws ecr get-login-password --endpoint-url $AWS_ENDPOINT_URL | docker login --username AWS --password-stdin \
-    000000000000.dkr.ecr.us-east-1.localhost:4566
-docker push 000000000000.dkr.ecr.us-east-1.localhost:4566/pizzeria/app:v1
+docker network create floci-net
+docker run -d --name floci --network floci-net -p 4566:4566 \
+  -e FLOCI_SERVICES_ECR_URI_STYLE=path \
+  -e FLOCI_SERVICES_ECR_DOCKER_NETWORK=floci-net \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  floci/floci:2.4.0
+
+# El URI lo devuelve la API; no se escribe a mano.
+URI=$(aws ecr create-repository --repository-name pizzeria/app \
+        --endpoint-url http://localhost:4566 --query repository.repositoryUri --output text)
+aws ecr get-login-password --endpoint-url http://localhost:4566 | docker login --username AWS --password-stdin \
+    localhost:4566
+docker tag mi-app:local "$URI:v1"
+docker push "$URI:v1"
 ```
 
 **Esto permite ensayar US-071 entero antes de tocar AWS.**
@@ -259,20 +313,28 @@ revisión a ojo.
 
 ---
 
-## 9. Lo que todavía no está verificado
+## 9. Estado de la verificación
 
-**Nada de este documento está probado.** Es investigación hecha con la documentación del fabricante,
-no con el emulador delante. Se verifica en:
+Sesión del **2026-11-08** sobre `floci/floci:2.4.0` en Docker Desktop (Windows 11). Detalle y salidas
+literales: [`floci-laboratorio.md`](floci-laboratorio.md).
 
-| Qué verificar | Dónde |
+| Qué | Estado |
 |---|---|
-| Floci arranca en Docker Desktop sobre **Windows** | US-051 |
-| Versión exacta de la imagen, **sin `latest`** | US-051 |
-| `endpointOverride` funciona con los clientes que usemos | US-051 |
-| Bucket creado idempotentemente al arrancar | US-051 |
-| URL prefirmada con caducidad configurable | US-052 |
-| Módulo de Testcontainers 2.x correcto | US-051 |
-| `docker push` contra el ECR emulado | US-071 |
+| Floci arranca en Docker Desktop sobre **Windows** | ✅ Verificado |
+| Versión exacta de la imagen, **sin `latest`** | ✅ `2.4.0` (digest `5ee85db6…`) |
+| S3: bucket, objeto y URL prefirmada con caducidad | ✅ Verificado |
+| SQS: cola, envío y recepción con cuerpo JSON | ✅ Verificado |
+| ECR: crear, login, `docker push` y listar tags | ✅ Verificado, con socket + red + `uri-style=path` |
+| ECS: definición, servicio y contenedor sirviendo HTTP | ✅ Verificado (el proyecto no lo usa, ver §2) |
+| EC2: `RunInstances` lanza un contenedor real | ✅ Verificado (IP privada no alcanzable en Docker Desktop) |
+| IAM, STS y CloudWatch Logs | ✅ Verificado (IAM no evalúa políticas) |
+| `endpointOverride` desde el SDK de AWS v2 | ⬜ Pendiente (probado con CLI, no con el SDK) |
+| Bucket creado idempotentemente al arrancar | ⬜ Pendiente (requiere *init hooks*) |
+| Módulo de Testcontainers 2.x correcto | ⬜ Pendiente |
+
+> **Si Floci no cumple**, el plan B de ADR-0006 es **LocalStack**, y habría que responder antes a la
+> pregunta que sigue abierta en `spring-conventions.md` §6.3: ¿sigue siendo compatible su módulo de
+> Testcontainers con la versión 2.x, que renombró todos sus módulos?
 
 > **Si Floci no cumple**, el plan B de ADR-0006 es **LocalStack**, y habría que responder antes a la
 > pregunta que sigue abierta en `spring-conventions.md` §6.3: ¿sigue siendo compatible su módulo de
