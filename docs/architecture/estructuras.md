@@ -361,7 +361,7 @@ pieza de despliegue está bloqueada. Conviene separarlos porque son dos decision
 | Job | Qué hace | Por qué ese detalle |
 |---|---|---|
 | **`verify`** | `setup-java` Temurin **21** con `cache: maven`, instala `unzip`, y corre `./mvnw -B -ntp verify` en `backend/` | El Enforcer ya falla con otro JDK, pero se fija `java-version` igualmente: compilar con 25 y probar con 21 es exactamente el «funciona en mi máquina» que evita ADR-0010. El `unzip` hace falta porque el wrapper valida el SHA-256 y en imágenes mínimas no está |
-| **`secrets`** | Gitleaks con `fetch-depth: 0` | Sin historial completo, sólo ve el commit actual: un secreto mergeado la semana pasada pasaría el escaneo sin que nadie se entere |
+| **`secrets`** | Gitleaks con `fetch-depth: 0` y la configuración de `.gitleaks.toml` | Sin historial completo, sólo ve el commit actual: un secreto mergeado la semana pasada pasaría el escaneo sin que nadie se entere. El `.gitleaks.toml` extiende las reglas por defecto y sólo añade excepciones puntuales de falsos positivos, ceñidas a una línea concreta; `WorkflowFilesTest` comprueba que no desactive reglas ni silencie commits o archivos enteros |
 | **`compose`** | Levanta el entorno local documentado con `--wait` y lo comprueba con `curl` | Un pipeline que no se ejecuta parece un pipeline que pasa. Además comprueba los criterios de US-005 en CI y no sólo en local: `/v3/api-docs` responde 200 y `/actuator/env` responde 404 |
 
 ### Las cuatro decisiones que hacen que esto sea seguro
