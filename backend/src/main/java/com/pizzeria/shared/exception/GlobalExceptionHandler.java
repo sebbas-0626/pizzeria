@@ -201,7 +201,10 @@ Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
     }
 
     private static String uriDe(HttpServletRequest peticion) {
-        return peticion.getMethod() + " " + peticion.getRequestURI();
+        // Se eliminan CR y LF para evitar log injection: un atacante podría inyectar
+        // líneas falsas en el log si la URI contiene saltos de línea.
+        String uri = peticion.getRequestURI().replaceAll("[\r\n]", "_");
+        return peticion.getMethod() + " " + uri;
     }
 
     /**

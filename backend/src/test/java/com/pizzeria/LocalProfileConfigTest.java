@@ -3,6 +3,8 @@ package com.pizzeria;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.LoaderOptions;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -103,7 +105,7 @@ class LocalProfileConfigTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> leer() throws Exception {
         try (InputStream entrada = Files.newInputStream(PERFIL_LOCAL)) {
-            Map<String, Object> mapa = new Yaml().load(entrada);
+            Map<String, Object> mapa = new Yaml(new SafeConstructor(new LoaderOptions())).load(entrada);
             assertThat(mapa).as("el perfil local no está vacío").isNotNull();
             return mapa;
         }

@@ -50,6 +50,9 @@ public class TraceIdFilter extends OncePerRequestFilter {
                 : UUID.randomUUID().toString();
 
         MDC.put(MDC_KEY, traceId);
+        // El traceId ya está validado como UUID antes de llegar aquí: esUuid() rechaza
+        // cualquier valor que no tenga el formato exacto, por lo que es seguro escribirlo
+        // en la cabecera de respuesta sin riesgo de XSS ni header injection.
         respuesta.setHeader(HEADER, traceId);
         try {
             cadena.doFilter(peticion, respuesta);

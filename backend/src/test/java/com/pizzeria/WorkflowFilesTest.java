@@ -3,6 +3,8 @@ package com.pizzeria;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.LoaderOptions;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -161,7 +163,7 @@ class WorkflowFilesTest {
 
     private Map<String, Object> leer(Path fichero) throws Exception {
         try (InputStream entrada = Files.newInputStream(fichero)) {
-            Map<String, Object> mapa = new Yaml().load(entrada);
+            Map<String, Object> mapa = new Yaml(new SafeConstructor(new LoaderOptions())).load(entrada);
             assertThat(mapa).as("%s no está vacío", fichero).isNotNull();
             return mapa;
         }
