@@ -11,17 +11,17 @@ import com.pizzeria.infrastructure.adapter.in.web.dto.RegisterRequest;
 import com.pizzeria.infrastructure.adapter.in.web.dto.UserResponse;
 import com.pizzeria.shared.security.JwtService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     /** Prefijo obligatorio de la cabecera {@code Authorization}. */
     private static final String BEARER_PREFIX = "Bearer ";
@@ -30,16 +30,6 @@ public class AuthController {
     private final LoginUserUseCase loginUserUseCase;
     private final LogoutUserUseCase logoutUserUseCase;
     private final JwtService jwtService;
-
-    public AuthController(RegisterUserUseCase registerUserUseCase,
-                         LoginUserUseCase loginUserUseCase,
-                         LogoutUserUseCase logoutUserUseCase,
-                         JwtService jwtService) {
-        this.registerUserUseCase = registerUserUseCase;
-        this.loginUserUseCase = loginUserUseCase;
-        this.logoutUserUseCase = logoutUserUseCase;
-        this.jwtService = jwtService;
-    }
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {

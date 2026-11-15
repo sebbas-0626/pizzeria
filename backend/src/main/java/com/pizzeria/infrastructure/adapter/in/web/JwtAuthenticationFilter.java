@@ -1,28 +1,25 @@
 package com.pizzeria.infrastructure.adapter.in.web;
 
 import com.pizzeria.shared.security.JwtService;
+import com.pizzeria.domain.port.out.TokenRevocationPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.pizzeria.domain.port.out.TokenRevocationPort;
 import java.io.IOException;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final TokenRevocationPort tokenRevocationPort;
-
-    public JwtAuthenticationFilter(JwtService jwtService, TokenRevocationPort tokenRevocationPort) {
-        this.jwtService = jwtService;
-        this.tokenRevocationPort = tokenRevocationPort;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

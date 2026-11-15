@@ -1,12 +1,12 @@
 package com.pizzeria.shared.exception;
 
 import com.pizzeria.domain.exception.DomainException;
-import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
 import com.pizzeria.domain.exception.ErrorCode;
+import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -38,10 +38,9 @@ import java.util.Map;
  * autorización ni SQL. El detalle de un 500 es siempre genérico, porque su texto puede contener
  * cualquier cosa.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static final String TIPO_BASE = "https://pizzeria.local/errors/";
 

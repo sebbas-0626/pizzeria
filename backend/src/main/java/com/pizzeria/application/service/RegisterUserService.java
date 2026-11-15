@@ -4,6 +4,7 @@ import com.pizzeria.domain.exception.EmailAlreadyRegisteredException;
 import com.pizzeria.domain.model.User;
 import com.pizzeria.domain.port.in.RegisterUserUseCase;
 import com.pizzeria.domain.port.out.UserRepositoryPort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,15 +13,11 @@ import java.time.Instant;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class RegisterUserService implements RegisterUserUseCase {
 
     private final UserRepositoryPort userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public RegisterUserService(UserRepositoryPort userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @Override
     public User register(String email, String password, String firstName, String lastName, String phone) {

@@ -3,19 +3,17 @@ package com.pizzeria.infrastructure.adapter.in.web;
 import com.pizzeria.domain.model.Product;
 import com.pizzeria.domain.port.in.ListProductsUseCase;
 import com.pizzeria.infrastructure.adapter.in.web.dto.ProductResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/products")
 public class ProductController {
 
     private final ListProductsUseCase listProductsUseCase;
-
-    public ProductController(ListProductsUseCase listProductsUseCase) {
-        this.listProductsUseCase = listProductsUseCase;
-    }
 
     @GetMapping
     public List<ProductResponse> list(

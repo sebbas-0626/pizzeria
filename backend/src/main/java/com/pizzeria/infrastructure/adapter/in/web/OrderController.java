@@ -9,25 +9,22 @@ import com.pizzeria.domain.port.out.OrderRepositoryPort;
 import com.pizzeria.infrastructure.adapter.in.web.dto.CreateOrderRequest;
 import com.pizzeria.infrastructure.adapter.in.web.dto.OrderItemResponse;
 import com.pizzeria.infrastructure.adapter.in.web.dto.OrderResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/orders")
 public class OrderController {
 
     private final PlaceOrderUseCase placeOrderUseCase;
     private final OrderRepositoryPort orderRepository;
-
-    public OrderController(PlaceOrderUseCase placeOrderUseCase, OrderRepositoryPort orderRepository) {
-        this.placeOrderUseCase = placeOrderUseCase;
-        this.orderRepository = orderRepository;
-    }
 
     @PostMapping
     public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request,

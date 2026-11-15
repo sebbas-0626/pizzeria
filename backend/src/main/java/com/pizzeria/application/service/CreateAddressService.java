@@ -3,6 +3,7 @@ package com.pizzeria.application.service;
 import com.pizzeria.domain.model.Address;
 import com.pizzeria.domain.port.in.CreateAddressUseCase;
 import com.pizzeria.domain.port.out.AddressRepositoryPort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,13 +11,10 @@ import java.time.Instant;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class CreateAddressService implements CreateAddressUseCase {
 
     private final AddressRepositoryPort addressRepository;
-
-    public CreateAddressService(AddressRepositoryPort addressRepository) {
-        this.addressRepository = addressRepository;
-    }
 
     @Override
     public Address create(Long userId, String alias, String street, String city,
