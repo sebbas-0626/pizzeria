@@ -28,9 +28,19 @@
 | Tamaño de clase | Máximo ~300 líneas. Si se supera, se divide por responsabilidad |
 | Tamaño de método | Máximo ~15 líneas. Si supera, se extrae o se refactoriza |
 | Profundidad de anidación | Máximo 3 niveles |
-| Imports de lombok | **Prohibidos en todo el proyecto** |
+| Lombok | Permitido en `application`, `infrastructure` y `shared`. **Prohibido en `domain`** |
 
-**Por qué sin Lombok.** Lombok genera código que no se ve al leer la clase y añade un processor de anotaciones al build. Para un proyecto de portafolio, el argumento de "código explícito" outweighs el ahorro de líneas. Si más adelante hay una decisión contraria, se escribe un ADR.
+**Por qué Lombok solo fuera del dominio.** El dominio debe ser Java puro, sin dependencias de frameworks ni procesadores externos, para que sea portable y testeable sin contexto de Spring. En las capas externas, Lombok reduce el boilerplate de clases mutables (entidades JPA, servicios) sin comprometer esa regla. Los DTOs inmutables siguen usando **records de Java**, que no necesitan Lombok.
+
+**Anotaciones permitidas por caso de uso:**
+
+| Caso | Anotación |
+|---|---|
+| Clase inmutable (DTO interno, value object fuera del dominio) | `record` de Java (preferido) |
+| Clase con constructor de inyección | `@RequiredArgsConstructor` |
+| Entidad JPA mutable | `@Getter` + `@Setter` o `@Data` |
+| Logger | `@Slf4j` |
+| Builder | `@Builder` |
 
 ---
 

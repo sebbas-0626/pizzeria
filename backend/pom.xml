@@ -46,8 +46,8 @@
         <archunit.version>1.5.1</archunit.version>
         <!-- MapStruct no viene en el BOM de Spring Boot: se fija aquí para que la
              dependencia y el procesador de anotaciones usen siempre la misma versión.
-             Versión 1.6.3: compatible con Java 21 y sin dependencia de Lombok, que
-             está prohibido (conventions.md §2). -->
+             Versión 1.6.3: compatible con Java 21 y con Lombok (procesadores declarados
+             en maven-compiler-plugin en el orden correcto: Lombok primero). -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <springdoc.version>3.1.1</springdoc.version>
 
@@ -110,11 +110,21 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- ==================== lombok ==================== -->
+        <!-- Permitido en application, infrastructure y shared. Prohibido en domain.
+             Sin versión: la gestiona el BOM de Spring Boot. -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- ==================== mapeo ==================== -->
         <!-- MapStruct genera en tiempo de compilación las implementaciones de las
-             interfaces Mapper, sin Lombok y sin código escrito a mano. El procesador
-             está declarado en maven-compiler-plugin: ver la nota de annotationProcessorPaths.
-             Sólo se usa en la capa infrastructure; el dominio no se mapea. -->
+             interfaces Mapper. El procesador está declarado en maven-compiler-plugin
+             después del de Lombok: ese orden es obligatorio para que MapStruct vea
+             los métodos que Lombok genera. Sólo se usa en infrastructure; el dominio
+             no se mapea. -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
@@ -243,7 +253,9 @@
               Además de llegar tarde, el requisito RNF-05 pide que el perfil por
               defecto arranque sin ningún servicio de AWS.
 
-            - Lombok → nunca. Ver conventions.md §2.
+            - software.amazon.awssdk:* → US-050 y US-060 (Sprints 6 y 7).
+              Además de llegar tarde, el requisito RNF-05 pide que el perfil por
+              defecto arranque sin ningún servicio de AWS.
         -->
 
     </dependencies>
@@ -267,8 +279,6 @@
               Con annotationProcessorPaths el procesador queda explícito y aislado: sólo
               se ejecutan los procesadores que aquí se indican, sin que Maven descubra
               por su cuenta los que encuentre en el classpath. Es además la forma de
-              impedir que Lombok se cuele de nuevo como procesador, que está prohibido.
-
               Sin <version>: el BOM de spring-boot-starter-parent la gestiona.
             -->
             <plugin>
@@ -276,6 +286,12 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <annotationProcessorPaths>
+                        <!-- Lombok debe ir ANTES que MapStruct: MapStruct necesita
+                             ver los métodos que Lombok genera (getters, constructores). -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
                         <path>
                             <groupId>org.mapstruct</groupId>
                             <artifactId>mapstruct-processor</artifactId>
