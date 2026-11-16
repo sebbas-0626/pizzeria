@@ -18,6 +18,7 @@ public class LoginUserService implements LoginUserUseCase {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    /* Este servicio permite a un usuario iniciar sesión en la aplicación,  */
     public User login(String email, String password) {
         User user = userRepository.findByEmail(email.trim().toLowerCase())
             .orElseThrow(InvalidCredentialsException::new);
