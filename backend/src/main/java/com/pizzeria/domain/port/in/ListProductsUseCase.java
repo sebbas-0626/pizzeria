@@ -1,15 +1,9 @@
 package com.pizzeria.domain.port.in;
 
 import com.pizzeria.domain.model.Product;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ListProductsUseCase {
-
-    /**
-     * Lista productos del menú con filtros opcionales.
-     * @param categoryId filtro opcional por categoría
-     * @param onlyAvailable si true, solo productos disponibles
-     */
-    List<Product> listProducts(Long categoryId, boolean onlyAvailable);
+    Page<Product> listProducts(Long categoryId, boolean onlyAvailable, Pageable pageable);
 }

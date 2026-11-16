@@ -4,9 +4,10 @@ import com.pizzeria.domain.model.Product;
 import com.pizzeria.domain.port.out.ProductRepositoryPort;
 import com.pizzeria.infrastructure.adapter.out.persistence.entity.ProductEntity;
 import com.pizzeria.infrastructure.adapter.out.persistence.repository.ProductJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -19,11 +20,9 @@ public class ProductJpaAdapter implements ProductRepositoryPort {
     }
 
     @Override
-    public List<Product> findAll(Long categoryId, boolean onlyAvailable) {
-        return jpaRepository.findAllByFilters(categoryId, onlyAvailable)
-            .stream()
-            .map(this::toDomain)
-            .toList();
+    public Page<Product> findAll(Long categoryId, boolean onlyAvailable, Pageable pageable) {
+        return jpaRepository.findAllByFilters(categoryId, onlyAvailable, pageable)
+            .map(this::toDomain);
     }
 
     @Override

@@ -4,10 +4,10 @@ import com.pizzeria.domain.model.Product;
 import com.pizzeria.domain.port.in.ListProductsUseCase;
 import com.pizzeria.domain.port.out.ProductRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -17,7 +17,7 @@ public class ListProductsService implements ListProductsUseCase {
     private final ProductRepositoryPort productRepository;
 
     @Override
-    public List<Product> listProducts(Long categoryId, boolean onlyAvailable) {
-        return productRepository.findAll(categoryId, onlyAvailable);
+    public Page<Product> listProducts(Long categoryId, boolean onlyAvailable, Pageable pageable) {
+        return productRepository.findAll(categoryId, onlyAvailable, pageable);
     }
 }
