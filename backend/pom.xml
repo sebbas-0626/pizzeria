@@ -49,7 +49,7 @@
              Versión 1.6.3: compatible con Java 21 y sin dependencia de Lombok, que
              está prohibido (conventions.md §2). -->
         <mapstruct.version>1.6.3</mapstruct.version>
-        <springdoc.version>3.1.1</springdoc.version>
+        <springdoc.version>3.2.0</springdoc.version>
 
         <!-- Construcción reproducible: misma entrada, mismo JAR. -->
         <project.build.outputTimestamp>2026-10-11T00:00:00Z</project.build.outputTimestamp>
