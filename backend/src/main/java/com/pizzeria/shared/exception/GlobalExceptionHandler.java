@@ -58,8 +58,7 @@ public class GlobalExceptionHandler {
 
             Map.entry(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.ORDERS_NOT_FOUND, HttpStatus.NOT_FOUND),
-            Map.entry(ErrorCode.CATALOG_PIZZA_NOT_FOUND, HttpStatus.NOT_FOUND),
-            Map.entry(ErrorCode.CATALOG_VARIANT_NOT_FOUND, HttpStatus.NOT_FOUND),
+            Map.entry(ErrorCode.CATALOG_PRODUCT_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.IDENTITY_CUSTOMER_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.IDENTITY_ADDRESS_NOT_FOUND, HttpStatus.NOT_FOUND),
 
@@ -69,7 +68,7 @@ Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
             Map.entry(ErrorCode.PAYMENTS_ALREADY_REGISTERED, HttpStatus.CONFLICT),
 
             Map.entry(ErrorCode.ORDERS_EMPTY, HttpStatus.UNPROCESSABLE_ENTITY),
-            Map.entry(ErrorCode.CATALOG_VARIANT_NOT_AVAILABLE, HttpStatus.UNPROCESSABLE_ENTITY),
+            Map.entry(ErrorCode.CATALOG_PRODUCT_NOT_AVAILABLE, HttpStatus.UNPROCESSABLE_ENTITY),
             Map.entry(ErrorCode.PAYMENTS_AMOUNT_MISMATCH, HttpStatus.UNPROCESSABLE_ENTITY),
 
             Map.entry(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
@@ -147,7 +146,7 @@ Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
     /**
      * Ruta inexistente.
      *
-     * <p>Usa un código genérico y no uno de dominio: decir {@code CATALOG_PIZZA_NOT_FOUND} cuando lo
+     * <p>Usa un código genérico y no uno de dominio: decir {@code CATALOG_PRODUCT_NOT_FOUND} cuando lo
      * que falló fue la URL sería mentirle a quien integra, y le haría buscar un problema de catálogo
      * donde sólo hay una dirección mal escrita.
      */

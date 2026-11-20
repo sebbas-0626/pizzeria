@@ -159,7 +159,7 @@ Detalle completo en [`docs/development/spring-conventions.md`](docs/development/
 
 - Una historia (o subtarea acotada) por sesión.
 - Código + pruebas + migración + documentación, en el mismo cambio.
-- **Endpoint nuevo o endpoint cambiado → su petición en `api/bruno/pizzeria.postman_collection.json`, en el mismo cambio.** Es la colección de Postman para probar la API a mano y crece con la API: carpeta por recurso (`Sistema`, `Catálogo de pizzas`, …), una petición por caso con nombre corto en español, descripción de una línea y la respuesta real guardada como ejemplo. Sin ella, un endpoint no está terminado: `ColeccionPostmanTest.todoEndpointImplementadoTieneSuPeticion` falla en cuanto el contrato lo marca como `Hecho`.
+- **Endpoint nuevo o endpoint cambiado → su petición en `api/bruno/pizzeria.postman_collection.json`, en el mismo cambio.** Es la colección de Postman para probar la API a mano y crece con la API: carpeta por recurso (`Sistema`, `Catálogo de productos`, …), una petición por caso con nombre corto en español, descripción de una línea y la respuesta real guardada como ejemplo. Sin ella, un endpoint no está terminado: `ColeccionPostmanTest.todoEndpointImplementadoTieneSuPeticion` falla en cuanto el contrato lo marca como `Hecho`.
 - Ejecutar `./mvnw verify` y **reportar la salida real**.
 - Prohibido simular: `TODO`, `@Disabled`, `return null`, mock fijado o feature flag que finja comportamiento se declara como pendiente, nunca como terminado.
 - No sobrescribir ni borrar trabajo previo sin revisarlo y pedir autorización.

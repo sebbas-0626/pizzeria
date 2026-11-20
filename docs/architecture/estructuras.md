@@ -305,7 +305,7 @@ historias de S2–S4.
 | Tabla | Modelo de dominio | Puerto de salida | Adaptador |
 |---|---|---|---|
 | `customers` · `customer_roles` | `domain.model.Cliente` | `ClienteRepositoryPort` | `ClienteJpaAdapter` |
-| `pizzas` · `pizza_variants` | `domain.model.Producto` | `ProductoRepositoryPort` | `ProductoJpaAdapter` |
+| `categories` · `products` | `domain.model.Category` · `Product` | `CategoryRepositoryPort` · `ProductRepositoryPort` | `CategoryJpaAdapter` · `ProductJpaAdapter` |
 | `orders` · `order_items` · `order_status_history` | `domain.model.Pedido` · `LineaPedido` | `PedidoRepositoryPort` | `PedidoJpaAdapter` |
 | `cash_payments` | `domain.model.PagoEfectivo` | `PedidoRepositoryPort` | `PedidoJpaAdapter` |
 | *(futuro)* | `domain.model.Imagen` | `ImagenStoragePort` | `S3ImagenAdapter` |

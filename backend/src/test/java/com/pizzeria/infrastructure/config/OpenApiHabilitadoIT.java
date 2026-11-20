@@ -83,7 +83,7 @@ class OpenApiHabilitadoIT {
         JsonNode contrato = json.readTree(pedir("/v3/api-docs").body());
 
         // Un requisito de seguridad global marcaria como privados endpoints publicos como
-        // GET /api/v1/pizzas, y quien integra acabaria mandando un token donde no hace falta.
+        // GET /api/v1/products, y quien integra acabaria mandando un token donde no hace falta.
         // El esquema se declara; cada operacion aplica el suyo en la historia que la crea.
         assertThat(contrato.has("security")).isFalse();
     }
