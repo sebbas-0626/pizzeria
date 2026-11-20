@@ -7,41 +7,26 @@ mano. En Postman: **Import → Import** → el fichero.
 
 ```powershell
 pwsh scripts/dev-up.ps1 -Detach   # levanta PostgreSQL y la aplicación
-pwsh scripts/db.ps1  -Accion seed # carga las 6 pizzas de ejemplo
+pwsh scripts/db.ps1  -Accion seed # carga categorías y productos de ejemplo
 ```
 
-El catálogo usa **identificadores numéricos** desde la migración `V2`. Con el seed recién cargado en
-una base vacía quedan:
-
-| id | Pizza | Para probar |
-|---|---|---|
-| 1 | Margarita | El detalle con los tres tamaños |
-| 2 | Bufala | 404: su única variante está agotada |
-| 3 | Diavola | Listado |
-| 4 | Capricciosa | Listado con el grande agotado |
-| 5 | Vegetariana | 404: no tiene ninguna variante |
-| 6 | Retirada | 404: está dada de baja |
+El catálogo usa **identificadores numéricos**. Con el seed recién cargado en una base vacía hay
+categorías (`Classic Pizzas`, `Special Pizzas`, `Drinks`) y productos como `Margarita`, `Pepperoni` o
+`Hawaiian`:
 
 ```powershell
-curl http://localhost:8080/api/v1/pizzas/1
+curl "http://localhost:8080/api/v1/products?onlyAvailable=true"
+curl http://localhost:8080/api/v1/products/1
 ```
 
-> **Ojo si tu base ya existía antes de la migración `V2`.** Los ids los asignó la migración
-> (`row_number()` por antigüedad y nombre), no el seed, así que pueden no coincidir con la tabla
-> anterior: en el laboratorio quedó `1` Bufala, `2` Capricciosa, `3` Diavola, **`4` Margarita**,
-> `5` Retirada y `6` Vegetariana. Para tener los ids del seed, empezar de cero:
->
-> ```powershell
-> pwsh scripts/db.ps1 -Accion reset -Force
-> pwsh scripts/db.ps1 -Accion seed
-> ```
->
-> Y para saber los tuyos, sin suponer nada:
->
-> ```powershell
-> pwsh scripts/db.ps1 -Accion shell
-> select id, name from pizzas order by id;
-> ```
+Los ids los asigna la base (`IDENTITY`), así que si tu volumen ya tenía datos pueden no empezar en 1.
+Para saber los tuyos sin suponer nada:
+
+```powershell
+pwsh scripts/db.ps1 -Accion shell
+select id, name from categories order by id;
+select id, name, category_id from products order by id;
+```
 
 ## Variables
 
@@ -49,11 +34,12 @@ curl http://localhost:8080/api/v1/pizzas/1
 |---|---|
 | `baseUrl` | `http://localhost:8080` |
 | `token` | Lo rellena la petición de login |
-| `pizzaId` | Lo rellena «Crear pizza» |
-| `variantId` | Lo rellena «Añadir variante» |
+| `productId` | Id de un producto existente, para el detalle |
+| `categoryId` | Id de una categoría, para filtrar el listado |
+| `orderId` | Lo rellena «Crear pedido» |
+| `addressId` | Lo rellena «Crear direccion» |
 
-Con las peticiones de la carpeta `Pizzas — Admin` el flujo es: login → crear pizza (guarda su id) →
-añadir variante (guarda su id) → actualizar. Para probar contra el seed, pon `1` en `pizzaId`.
+Para probar el detalle, pon un id real del seed en `productId`.
 
 ## Rutas que ya existen
 
@@ -83,6 +69,6 @@ divergen, **manda el documento**.
 
 ## Al añadir un endpoint
 
-1. En la carpeta de su recurso (`Auth`, `Pizzas — Público`, `Pizzas — Admin`, …).
+1. En la carpeta de su recurso (`Auth`, `Categorias — Publico`, `Productos — Publico`, …).
 2. Con `{{baseUrl}}` y las variables de arriba, nunca un id escrito a mano.
 3. Con la respuesta real guardada como ejemplo, para poder mirarla sin ejecutarla.

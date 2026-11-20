@@ -6,6 +6,7 @@ import com.pizzeria.domain.port.in.ListAddressesUseCase;
 import com.pizzeria.infrastructure.adapter.in.web.dto.AddressResponse;
 import com.pizzeria.infrastructure.adapter.in.web.dto.CreateAddressRequest;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,17 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/addresses")
 public class AddressController {
 
     private final CreateAddressUseCase createAddressUseCase;
     private final ListAddressesUseCase listAddressesUseCase;
-
-    public AddressController(CreateAddressUseCase createAddressUseCase,
-                             ListAddressesUseCase listAddressesUseCase) {
-        this.createAddressUseCase = createAddressUseCase;
-        this.listAddressesUseCase = listAddressesUseCase;
-    }
 
     @PostMapping
     public ResponseEntity<AddressResponse> create(@Valid @RequestBody CreateAddressRequest request,

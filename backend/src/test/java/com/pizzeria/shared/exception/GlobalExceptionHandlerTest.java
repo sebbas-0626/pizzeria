@@ -53,8 +53,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Cada codigo del catalogo se traduce al estado HTTP que le corresponde")
     void cadaCodigoSeTraduceASuEstado() throws Exception {
         assertThat(estadoDe("ORDERS_NOT_FOUND")).isEqualTo(404);
-        assertThat(estadoDe("CATALOG_PIZZA_NOT_FOUND")).isEqualTo(404);
-        assertThat(estadoDe("CATALOG_VARIANT_NOT_FOUND")).isEqualTo(404);
+        assertThat(estadoDe("CATALOG_PRODUCT_NOT_FOUND")).isEqualTo(404);
         assertThat(estadoDe("IDENTITY_CUSTOMER_NOT_FOUND")).isEqualTo(404);
 
         assertThat(estadoDe("IDENTITY_EMAIL_ALREADY_REGISTERED")).isEqualTo(409);
@@ -62,7 +61,7 @@ class GlobalExceptionHandlerTest {
         assertThat(estadoDe("PAYMENTS_ALREADY_REGISTERED")).isEqualTo(409);
 
         assertThat(estadoDe("ORDERS_EMPTY")).isEqualTo(422);
-        assertThat(estadoDe("CATALOG_VARIANT_NOT_AVAILABLE")).isEqualTo(422);
+        assertThat(estadoDe("CATALOG_PRODUCT_NOT_AVAILABLE")).isEqualTo(422);
         assertThat(estadoDe("PAYMENTS_AMOUNT_MISMATCH")).isEqualTo(422);
     }
 
@@ -183,7 +182,7 @@ class GlobalExceptionHandlerTest {
                 .contains(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
 
         // Código genérico, NO uno de dominio: si la URL está mal escrita, decir
-        // CATALOG_PIZZA_NOT_FOUND mandaría a buscar un problema de catálogo inexistente.
+        // CATALOG_PRODUCT_NOT_FOUND mandaría a buscar un problema de catálogo inexistente.
         assertThat(leer(resultado).path("code").asText()).isEqualTo("RESOURCE_NOT_FOUND");
     }
 

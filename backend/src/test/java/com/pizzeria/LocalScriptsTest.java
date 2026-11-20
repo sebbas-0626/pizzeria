@@ -129,7 +129,7 @@ class LocalScriptsTest {
     @DisplayName("db.ps1 no intenta sembrar si las migraciones no estan aplicadas")
     void dbNoSiembraSobreUnaBaseVacia() throws Exception {
         // El esquema lo crea Flyway al arrancar la APLICACIÓN, no este script. Con un volumen recién
-        // recreado, sembrar falla con el `relation "pizzas" does not exist` de PostgreSQL: un mensaje
+        // recreado, sembrar falla con el `relation "products" does not exist` de PostgreSQL: un mensaje
         // que habla de SQL y no dice que lo que falta es levantar la aplicación. Se comprueba antes.
         String script = leer("db.ps1");
 

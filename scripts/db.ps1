@@ -149,7 +149,7 @@ try {
             }
             # El esquema lo crea Flyway al ARRANCA LA APLICACIÓN, no este script. Si el volumen
             # se acaba de recrear (o la aplicación nunca llegó a levantar), la base está
-            # vacía y el INSERT falla con `relation "pizzas" does not exist`: un mensaje de
+            # vacía y el INSERT falla con `relation "products" does not exist`: un mensaje de
             # PostgreSQL que no dice que lo que falta es levantar la aplicación. Se comprueba
             # antes de intentarlo y se dice qué hacer.
             $existeProducto = docker compose -f $compose exec -T db psql -U $usuario -d $base -tAc `

@@ -1,12 +1,12 @@
 package com.pizzeria.shared.exception;
 
 import com.pizzeria.domain.exception.DomainException;
-import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
 import com.pizzeria.domain.exception.ErrorCode;
+import com.pizzeria.infrastructure.adapter.in.web.TraceIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -38,10 +38,9 @@ import java.util.Map;
  * autorización ni SQL. El detalle de un 500 es siempre genérico, porque su texto puede contener
  * cualquier cosa.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     private static final String TIPO_BASE = "https://pizzeria.local/errors/";
 
@@ -59,8 +58,7 @@ public class GlobalExceptionHandler {
 
             Map.entry(ErrorCode.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.ORDERS_NOT_FOUND, HttpStatus.NOT_FOUND),
-            Map.entry(ErrorCode.CATALOG_PIZZA_NOT_FOUND, HttpStatus.NOT_FOUND),
-            Map.entry(ErrorCode.CATALOG_VARIANT_NOT_FOUND, HttpStatus.NOT_FOUND),
+            Map.entry(ErrorCode.CATALOG_PRODUCT_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.IDENTITY_CUSTOMER_NOT_FOUND, HttpStatus.NOT_FOUND),
             Map.entry(ErrorCode.IDENTITY_ADDRESS_NOT_FOUND, HttpStatus.NOT_FOUND),
 
@@ -70,7 +68,7 @@ Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
             Map.entry(ErrorCode.PAYMENTS_ALREADY_REGISTERED, HttpStatus.CONFLICT),
 
             Map.entry(ErrorCode.ORDERS_EMPTY, HttpStatus.UNPROCESSABLE_ENTITY),
-            Map.entry(ErrorCode.CATALOG_VARIANT_NOT_AVAILABLE, HttpStatus.UNPROCESSABLE_ENTITY),
+            Map.entry(ErrorCode.CATALOG_PRODUCT_NOT_AVAILABLE, HttpStatus.UNPROCESSABLE_ENTITY),
             Map.entry(ErrorCode.PAYMENTS_AMOUNT_MISMATCH, HttpStatus.UNPROCESSABLE_ENTITY),
 
             Map.entry(ErrorCode.INTERNAL_ERROR, HttpStatus.INTERNAL_SERVER_ERROR));
@@ -148,7 +146,7 @@ Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
     /**
      * Ruta inexistente.
      *
-     * <p>Usa un código genérico y no uno de dominio: decir {@code CATALOG_PIZZA_NOT_FOUND} cuando lo
+     * <p>Usa un código genérico y no uno de dominio: decir {@code CATALOG_PRODUCT_NOT_FOUND} cuando lo
      * que falló fue la URL sería mentirle a quien integra, y le haría buscar un problema de catálogo
      * donde sólo hay una dirección mal escrita.
      */
@@ -202,7 +200,10 @@ Map.entry(ErrorCode.IDENTITY_EMAIL_ALREADY_REGISTERED, HttpStatus.CONFLICT),
     }
 
     private static String uriDe(HttpServletRequest peticion) {
-        return peticion.getMethod() + " " + peticion.getRequestURI();
+        // Se eliminan CR y LF para evitar log injection: un atacante podría inyectar
+        // líneas falsas en el log si la URI contiene saltos de línea.
+        String uri = peticion.getRequestURI().replaceAll("[\r\n]", "_");
+        return peticion.getMethod() + " " + uri;
     }
 
     /**

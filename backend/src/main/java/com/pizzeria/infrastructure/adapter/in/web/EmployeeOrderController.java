@@ -5,6 +5,7 @@ import com.pizzeria.domain.model.OrderStatus;
 import com.pizzeria.domain.port.out.OrderRepositoryPort;
 import com.pizzeria.infrastructure.adapter.in.web.dto.OrderItemResponse;
 import com.pizzeria.infrastructure.adapter.in.web.dto.OrderResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,15 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-/* este enpoind es para */
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/employee/orders")
 public class EmployeeOrderController {
 
     private final OrderRepositoryPort orderRepository;
-
-    public EmployeeOrderController(OrderRepositoryPort orderRepository) {
-        this.orderRepository = orderRepository;
-    }
 
     @GetMapping
     public List<OrderResponse> listAll(@RequestParam(required = false) String status) {

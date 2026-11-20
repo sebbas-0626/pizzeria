@@ -120,7 +120,7 @@ class ArchitectureRulesTest {
     @DisplayName("Los adaptadores de almacenamiento y mensajería no tocan el modelo ni JPA")
     void losAdaptadoresDeInfraestructuraEstanAislados() {
         // El puerto sí está en el dominio (domain.port.out), pero el modelo de negocio no. Un
-        // adaptador de S3 habla de claves y de bytes, nunca de pedidos ni de pizzas.
+        // adaptador de S3 habla de claves y de bytes, nunca de pedidos ni de productos.
         ArchRule regla = noClasses()
                 .that().resideInAnyPackage(
                         P + "infrastructure.adapter.out.storage..",

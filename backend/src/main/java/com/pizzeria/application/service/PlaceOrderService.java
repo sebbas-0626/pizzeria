@@ -11,6 +11,7 @@ import com.pizzeria.domain.port.in.PlaceOrderUseCase;
 import com.pizzeria.domain.port.out.AddressRepositoryPort;
 import com.pizzeria.domain.port.out.OrderRepositoryPort;
 import com.pizzeria.domain.port.out.ProductRepositoryPort;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,19 +21,12 @@ import java.util.Map;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PlaceOrderService implements PlaceOrderUseCase {
 
     private final ProductRepositoryPort productRepository;
     private final OrderRepositoryPort orderRepository;
     private final AddressRepositoryPort addressRepository;
-
-    public PlaceOrderService(ProductRepositoryPort productRepository,
-                             OrderRepositoryPort orderRepository,
-                             AddressRepositoryPort addressRepository) {
-        this.productRepository = productRepository;
-        this.orderRepository = orderRepository;
-        this.addressRepository = addressRepository;
-    }
 
     @Override
     public Order placeOrder(Long userId, Long addressId, PaymentMethod paymentMethod, String notes,

@@ -134,7 +134,7 @@ $env:POSTGRES_DB='pizzeria'; $env:POSTGRES_USER='pizzeria_dev'; $env:POSTGRES_PA
 | Documentación | springdoc-openapi 3.1 (Swagger UI, **sólo en local**) |
 | AWS | **Ninguno.** Sin S3 ni SQS: el MVP no depende de la nube |
 
-**Sin Lombok.** Código explícito. **Sin `double`** para dinero: `BigDecimal` escala 0, porque el peso
+**Sin Lombok en el dominio.** El dominio es Java puro: sin `@Getter`, sin `@Entity`, sin frameworks. Las capas externas sí pueden usar Lombok. **Sin `double`** para dinero: `BigDecimal` escala 0, porque el peso
 colombiano no tiene decimales.
 
 Tabla completa con la justificación de cada versión:

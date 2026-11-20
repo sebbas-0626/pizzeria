@@ -23,8 +23,8 @@ import org.springframework.context.annotation.Configuration;
  * </ol>
  *
  * <p><strong>El esquema se declara pero no se aplica a todas las operaciones.</strong> En esta API los
- * endpoints públicos no llevan autenticación: {@code GET /api/v1/pizzas} es público y
- * {@code POST /api/v1/admin/pizzas} exige {@code ADMIN} (RN-SE-02). Aplicar el requisito de seguridad
+ * endpoints públicos no llevan autenticación: {@code GET /api/v1/products} es público y
+ * {@code POST /api/v1/admin/products} exige {@code ADMIN} (RN-SE-02). Aplicar el requisito de seguridad
  * globalmente marcaría como privados endpoints que no lo son, y el que integra acabaría enviando un
  * token donde no hace falta.
  *
@@ -50,7 +50,7 @@ public class OpenApiConfig {
                 .version("v1")
                 .description("""
 
-                        Backend de una pizzería de una sola sede: catálogo de pizzas, pedidos **para
+                        Backend de una pizzería de una sola sede: catálogo de productos, pedidos **para
                         recogida presencial** y pago **en efectivo**.
 
                         No hay envíos a domicilio ni pasarelas de pago: son decisiones de alcance, no
@@ -59,7 +59,7 @@ public class OpenApiConfig {
                         ### Convenciones
 
                         - Todos los endpoints cuelgan de `/api/v1`.
-                        - Los importes son **pesos colombianos (COP)**, enteros, sin decimales.
+                        - Los importes son **pesos colombianos (COP)** con dos decimales (escala 2).
                         - **El servidor calcula todos los importes.** Si una petición incluye `price`,
                           `unitPrice` o `total`, esos campos se ignoran.
                         - Los errores salen como `application/problem+json` (RFC 9457) con un `code`

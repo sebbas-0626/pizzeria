@@ -34,8 +34,8 @@ public enum ErrorCode {
     RESOURCE_NOT_FOUND,
     /** El recurso no existe, o es de otro cliente. Nunca se distingue el caso ajeno del inexistente. */
     ORDERS_NOT_FOUND,
-    CATALOG_PIZZA_NOT_FOUND,
-    CATALOG_VARIANT_NOT_FOUND,
+    /** El producto no existe, o está dado de baja. */
+    CATALOG_PRODUCT_NOT_FOUND,
     IDENTITY_CUSTOMER_NOT_FOUND,
     /** La dirección indicada en un pedido no existe, o es de otro cliente. Nunca se distingue el caso ajeno. */
     IDENTITY_ADDRESS_NOT_FOUND,
@@ -52,8 +52,8 @@ public enum ErrorCode {
     // ---- 422 · Regla de negocio violada ----------------------------------------------
     /** Se intentó crear un pedido sin ninguna línea. */
     ORDERS_EMPTY,
-    /** La variante no existe, está inactiva o no está disponible. */
-    CATALOG_VARIANT_NOT_AVAILABLE,
+    /** El producto está dado de baja o no disponible para la venta. */
+    CATALOG_PRODUCT_NOT_AVAILABLE,
     /** El importe recibido no coincide con el total del pedido. */
     PAYMENTS_AMOUNT_MISMATCH,
 

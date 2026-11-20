@@ -2,14 +2,15 @@
 
 > Contrato de la API de la pizzería. **Fuente de verdad: [`requirements-v1.0.md`](../requirements/requirements-v1.0.md).**
 > Especificación legible por máquina (la que Spring genera del código):
-> <http://localhost:8080/v3/api-docs> en local, y su copia versionada en
-> [`openapi.json`](openapi.json) desde **US-045**.
+> <http://localhost:8080/v3/api-docs> en local. Su copia versionada, contrastada automáticamente con
+> este documento, llega en **US-045**.
 >
 > Qué es cada cosa: **Swagger** es la documentación viva y ejecutable. Este documento es el contrato
 > con las reglas que no se deducen del código: qué es un 404, por qué un 409, qué está fuera de
 > alcance. No duplica la lista de endpoints; para eso está el OpenAPI.
 >
-> Última actualización: **2026-10-17** (US-010). Ya hay endpoints: los dos públicos del catálogo.
+> Última actualización: **2026-11-19**. El catálogo es de **productos** (categoría y precio único por
+> producto); la pizzería es el negocio, no el modelo de datos.
 
 ---
 
@@ -40,11 +41,11 @@ mandar el total, podría mandar `1`. El servidor calcula; el cliente sólo dice 
 | Aspecto | Regla |
 |---|---|
 | Mecanismo | **Bearer** (JWT), cabecera `Authorization: Bearer <token>` |
-| Firma | **RS256** |
+| Firma | **HS256**, con el secreto configurado en `jwt.secret` |
 | Caducidad | **15 minutos**. No hay token de renovación: al caducar, hay que iniciar sesión otra vez |
-| Claims | `sub` (UUID del cliente), `roles`, `iss`, `iat`, `exp` |
-| Roles | `CLIENTE`, `COOK` o `ADMIN`. El primero es el único al que llega el registro público; los otros dos los crea el responsable por dentro |
-| Obtener `ADMIN` | **Imposible por vía pública.** El registro siempre fuerza `CUSTOMER` (RN-SE-03) |
+| Claims | `sub` (id numérico del cliente), `email`, `roles`, `jti`, `iat`, `exp` |
+| Roles | `CLIENTE`, `EMPLOYEE` o `ADMIN`. El primero es el único al que llega el registro público; los otros dos los crea el responsable por dentro |
+| Obtener `ADMIN` | **Imposible por vía pública.** El registro siempre fuerza `CLIENTE` (RN-SE-03) |
 
 Se documenta en el contrato con el esquema `bearerAuth`, declarado en
 [`OpenApiConfig`](../../backend/src/main/java/com/pizzeria/infrastructure/config/OpenApiConfig.java).
@@ -94,18 +95,18 @@ contrato y no cambia nunca.
 | Código | HTTP | Cuándo |
 |---|---|---|
 | `REQUEST_VALIDATION_FAILED` | 400 | El cuerpo o un parámetro no supera la validación. Incluye `errors` |
-| `MALFORMED_REQUEST` | 400 | El JSON no se puede deserializar, o un parámetro no tiene el tipo esperado |
+| `MALFORMED_REQUEST` | 400 | El JSON no se puede deserializar, un parámetro no tiene el tipo esperado, o el cuerpo trae un campo que la API no declara |
+| `IDENTITY_INVALID_CREDENTIALS` | 401 | Email o contraseña incorrectos |
 | `RESOURCE_NOT_FOUND` | 404 | La ruta no existe en la API |
 | `ORDERS_NOT_FOUND` | 404 | El pedido no existe **o es de otro cliente** |
-| `CATALOG_PIZZA_NOT_FOUND` | 404 | La pizza no existe |
-| `CATALOG_VARIANT_NOT_FOUND` | 404 | La variante no existe |
+| `CATALOG_PRODUCT_NOT_FOUND` | 404 | El producto no existe o no está disponible |
 | `IDENTITY_CUSTOMER_NOT_FOUND` | 404 | El cliente no existe |
 | `IDENTITY_ADDRESS_NOT_FOUND` | 404 | La dirección indicada en un pedido no existe **o es de otro cliente** |
 | `IDENTITY_EMAIL_ALREADY_REGISTERED` | 409 | El email ya está registrado |
 | `ORDERS_INVALID_TRANSITION` | 409 | La transición de estado no está permitida desde el estado actual |
 | `PAYMENTS_ALREADY_REGISTERED` | 409 | El pedido ya tiene un cobro |
 | `ORDERS_EMPTY` | 422 | Se intentó crear un pedido sin líneas |
-| `CATALOG_VARIANT_NOT_AVAILABLE` | 422 | La variante está inactiva o no disponible |
+| `CATALOG_PRODUCT_NOT_AVAILABLE` | 422 | El producto está dado de baja o agotado |
 | `PAYMENTS_AMOUNT_MISMATCH` | 422 | El importe recibido no coincide con el total |
 | `INTERNAL_ERROR` | 500 | Fallo no previsto. El mensaje es **siempre** genérico |
 
@@ -128,15 +129,15 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 
 | Método | Ruta | Acceso | Historia | Estado |
 |---|---|---|---|---|
-| `GET` | `/api/v1/pizzas` | Público | US-010 | ✅ **Hecho** |
-| `GET` | `/api/v1/pizzas/{pizzaId}` | Público | US-010 | ✅ **Hecho** |
-| `POST` | `/api/v1/admin/pizzas` | `ADMIN` | US-011 | Pendiente |
-| `PATCH` | `/api/v1/admin/pizzas/{pizzaId}` | `ADMIN` | US-011 | Pendiente |
-| `POST` | `/api/v1/admin/pizzas/{pizzaId}/variants` | `ADMIN` | US-012 | Pendiente |
-| `PATCH` | `/api/v1/admin/variants/{variantId}` | `ADMIN` | US-012 | Pendiente |
-| `POST` | `/api/v1/auth/register` | Público | US-020 | Pendiente |
-| `POST` | `/api/v1/auth/login` | Público | US-021 | Pendiente |
-| `GET` | `/api/v1/customers/me` | Autenticado | US-023 | Pendiente |
+| `GET` | `/api/v1/products` | Público | US-010 | ✅ **Hecho** |
+| `GET` | `/api/v1/products/{productId}` | Público | US-010 | ✅ **Hecho** |
+| `GET` | `/api/v1/categories` | Público | US-010 | ✅ **Hecho** |
+| `POST` | `/api/v1/admin/products` | `ADMIN` | US-011 | Pendiente |
+| `PATCH` | `/api/v1/admin/products/{productId}` | `ADMIN` | US-011 | Pendiente |
+| `POST` | `/api/v1/auth/register` | Público | US-020 | ✅ **Hecho** |
+| `POST` | `/api/v1/auth/login` | Público | US-021 | ✅ **Hecho** |
+| `POST` | `/api/v1/auth/logout` | Público | US-022 | ✅ **Hecho** |
+| `GET` | `/api/v1/customers/me` | Autenticado | US-023 | ✅ **Hecho** |
 | `POST` | `/api/v1/addresses` | Autenticado | US-030 | ✅ **Hecho** |
 | `GET` | `/api/v1/addresses` | Autenticado | US-030 | ✅ **Hecho** |
 | `POST` | `/api/v1/orders` | Autenticado | US-030 | ✅ **Hecho** |
@@ -147,7 +148,7 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 | `POST` | `/api/v1/employee/orders/{id}/confirm` | `ADMIN`, `EMPLOYEE` | US-035 | ✅ **Hecho** |
 | `POST` | `/api/v1/employee/orders/{id}/cancel` | `ADMIN`, `EMPLOYEE` | US-036 | ✅ **Hecho** |
 | `POST` | `/api/v1/employee/orders/{id}/complete-pickup` | `ADMIN`, `EMPLOYEE` | US-037 | ✅ **Hecho** |
-| `POST` | `/api/v1/admin/pizzas/{id}/image` | `ADMIN` | US-052 | Pendiente |
+| `POST` | `/api/v1/admin/products/{id}/image` | `ADMIN` | US-052 | Pendiente |
 
 ---
 
@@ -155,10 +156,11 @@ pedidos reales. El 404 no revela nada. La propiedad del recurso se verifica **en
 
 | Prefijo | Quién entra | Qué hay dentro |
 |---|---|---|
-| `/api/v1/pizzas/**` | **Público**, sin token | Leer el catálogo |
-| `/api/v1/admin/**` | `ADMIN` | **El catálogo**: crear pizzas, variantes, precios y disponibilidad (US-011, US-012, US-013, US-052) |
+| `/api/v1/products/**` | **Público**, sin token | Leer el catálogo |
+| `/api/v1/categories/**` | **Público**, sin token | Leer las categorías activas del catálogo |
+| `/api/v1/admin/**` | `ADMIN` | **El catálogo**: crear y editar productos, precios, disponibilidad e imágenes (US-011, US-013, US-052) |
 | `/api/v1/employee/**` | `ADMIN` o `EMPLOYEE` | **Los pedidos del mostrador**: listar todos, confirmar, cancelar y registrar la recogida con el cobro (US-034…US-037) |
-| `/api/v1/auth/**` | Público | Registrarse y hacer login |
+| `/api/v1/auth/**` | Público | Registrarse, hacer login y cerrar sesión |
 | `/api/v1/addresses/**` | Autenticado | Las direcciones **del propio cliente** |
 | `/api/v1/orders/**` | Autenticado | Los pedidos **del propio cliente** |
 
@@ -170,18 +172,19 @@ todos los días**. Por eso un `EMPLOYEE` no entra en `/admin/**` aunque sus ruta
 
 ## 4.1 El catálogo público
 
-Las dos rutas de lectura son **públicas**: no llevan token y no se les pide uno. Lo protegido en S2 es
+Las rutas de lectura son **públicas**: no llevan token y no se les pide uno. Lo protegido es
 `/api/v1/admin/**`, que llega con US-011.
 
-### `GET /api/v1/pizzas`
+### `GET /api/v1/products`
 
 Lista el catálogo en páginas.
 
 | Parámetro | Tipo | Por defecto | Valores | Regla |
 |---|---|---|---|---|
-| `availableOnly` | booleano | **`true`** | `true`, `false` | `true` muestra **sólo lo vendible** (RN-DS-02). `false` añade lo dado de baja y lo agotado, para la vista previa del administrador |
+| `categoryId` | entero | — | ≥ 1 | Filtra por categoría. Ausente devuelve todas |
+| `onlyAvailable` | booleano | **`true`** | `true`, `false` | `true` muestra **sólo lo vendible** (RN-DS-02). `false` añade lo dado de baja |
 | `page` | entero | `0` | ≥ 0 | Índice de página, empezando en 0 |
-| `size` | entero | `20` | 1 – 100 | Filas por página. Fuera de rango → **400** |
+| `size` | entero | `20` | ≥ 1 | Filas por página |
 
 Respuesta `200`:
 
@@ -190,21 +193,17 @@ Respuesta `200`:
   "content": [
     {
       "id": 1,
+      "categoryId": 1,
       "name": "Margarita",
-      "description": "Tomate, mozzarella y albahaca",
-      "variants": [
-        {
-          "id": 2,
-          "size": "SMALL",
-          "price": 9900,
-          "available": true
-        }
-      ]
+      "description": "Tomate y mozzarella",
+      "price": 12000.00,
+      "imageUrl": null,
+      "available": true
     }
   ],
   "page": 0,
   "size": 20,
-  "totalElements": 2,
+  "totalElements": 1,
   "totalPages": 1
 }
 ```
@@ -213,34 +212,56 @@ Reglas del contrato:
 
 | Regla | Detalle |
 |---|---|
-| **Orden** | Por `name`, sin distinguir mayúsculas: `Bufala, Diavola, Margarita`. **No** por fecha ni por precio |
-| **`price`** | Número JSON, **no texto**, y **sin decimales**: `12500`, nunca `"12500.00"` ni `12500.00` (RN-IM-05) |
-| **`size`** | `SMALL` \| `MEDIUM` \| `LARGE`. Es un conjunto cerrado: el esquema lo restringe |
-| **Orden de `variants`** | De menor a mayor tamaño |
+| **Orden** | Por `name` ascendente. **No** por fecha ni por precio |
+| **`price`** | Número JSON, **no texto**. Se serializa con la escala del valor almacenado (`DECIMAL(10,2)`) |
+| **`imageUrl`** | `null` mientras no se haya subido imagen (US-052) |
+| **`available`** | `false` en productos dados de baja o agotados; sólo aparecen si `onlyAvailable=false` |
+| **`categoryId`** | Categoría a la que pertenece el producto. La FK de la base impide un producto sin categoría |
 | **Catálogo vacío** | `200` con `content: []`, `totalElements: 0` y `totalPages: 0`. Nunca `404` |
 | **Página fuera de rango** | `200` con `content: []` y el `totalElements` correcto. Un `404` obligaría al cliente a distinguir dos casos indistinguibles desde fuera |
 | **`description` ausente** | `null`, nunca `""` |
 | **`totalElements` y `totalPages`** | Siempre con el **mismo filtro** que el contenido. Si no coinciden, el cliente pagina sobre una cuenta que no ve |
 
-**Por qué `availableOnly` viene en `true` por defecto.** El catálogo público muestra lo que se puede pedir.
-Una pizza sin ninguna variante disponible (RN-DS-02) no aparece, aunque esté activa: anunciarla sería una
-entrada que nadie puede convertir en pedido.
+> **Deuda conocida:** `page` negativo o `size` menor que 1 no se validan en el controlador todavía; hoy
+> acaban en `500`. El contrato fija los valores válidos y la validación con `400`
+> (`REQUEST_VALIDATION_FAILED`) es el siguiente paso del catálogo.
 
-### `GET /api/v1/pizzas/{pizzaId}`
+**Por qué `onlyAvailable` viene en `true` por defecto.** El catálogo público muestra lo que se puede pedir.
+Un producto agotado (RN-DS-02) no aparece: anunciarlo sería una entrada que nadie puede convertir en pedido.
 
-Detalle de una pizza, mismo cuerpo que un elemento de la lista.
+### `GET /api/v1/products/{productId}`
+
+Detalle de un producto, mismo cuerpo que un elemento de la lista.
 
 | Situación | Respuesta |
 |---|---|
-| Existe y se puede pedir | `200` con `id`, `name`, `description` y `variants` |
-| No existe | `404` `CATALOG_PIZZA_NOT_FOUND` |
-| Está dada de baja | `404` `CATALOG_PIZZA_NOT_FOUND` |
-| No tiene ninguna variante disponible | `404` `CATALOG_PIZZA_NOT_FOUND` |
-| `pizzaId` no es un número entero | `400` `MALFORMED_REQUEST` |
+| Existe y está disponible | `200` con `id`, `categoryId`, `name`, `description`, `price`, `imageUrl` y `available` |
+| No existe | `404` `CATALOG_PRODUCT_NOT_FOUND` |
+| Está dado de baja o agotado | `404` `CATALOG_PRODUCT_NOT_FOUND` |
+| `productId` no es un número entero | `400` `MALFORMED_REQUEST` |
 
-Las tres filas de 404 son **la misma respuesta a propósito**: el catálogo público no enseña lo dado de baja,
+Las dos filas de 404 son **la misma respuesta a propósito**: el catálogo público no enseña lo dado de baja,
 así que confirmar por el mismo camino que buscar sería filtrar información. Es el mismo criterio que aplica
 D4 a los pedidos ajenos.
+
+### `GET /api/v1/categories`
+
+Lista las categorías activas del catálogo, ordenadas por `name`. **Pública**.
+
+Respuesta `200`:
+
+```json
+[
+  { "id": 1, "name": "Pizzas", "description": "Nuestras pizzas artesanales" },
+  { "id": 2, "name": "Bebidas", "description": "Gaseosas y jugos" }
+]
+```
+
+| Regla | Detalle |
+|---|---|
+| **Sólo activas** | Las categorías con `active=false` no aparecen |
+| **Orden** | Por `name` ascendente |
+| **Sin categorías** | `200` con `[]`, nunca `404` |
 
 ### 4.3 Identidad
 
@@ -252,25 +273,27 @@ Cuerpo:
 
 | Campo | Tipo | Obligatorio | Regla |
 |---|---|---|---|
-| `email` | texto | sí | Formato válido, 254 caracteres como máximo. Se guarda **en minúsculas** |
+| `email` | texto | sí | Formato de email válido. Se guarda **en minúsculas** |
 | `password` | texto | sí | 10 caracteres como mínimo. Se guarda **codificada con BCrypt**, nunca en claro |
-| `fullName` | texto | sí | 1 a 120 caracteres |
-| `phone` | texto | no | 30 caracteres como máximo. Ausente sale como `null` |
+| `firstName` | texto | sí | 1 a 100 caracteres |
+| `lastName` | texto | sí | 1 a 100 caracteres |
+| `phone` | texto | no | Ausente sale como `null` |
 
 > **No hay campo de rol, y se note.** Un `"role": "ADMIN"` —o un `"roles"`, o cualquier otro campo que no
-> esté en la tabla— devuelve **400** `MALFORMED_REQUEST` diciendo cuál sobra. La regla es global
+> esté en la tabla— devuelve **400** `MALFORMED_REQUEST`. La regla es global
 > (`spring.jackson.deserialization.fail-on-unknown-properties=true`): **la API rechaza los campos que no
-> declara**, y el rol nunca se toma del cuerpo (RF-ID-04). El registro **siempre** crea `CUSTOMER`.
+> declara**, y el rol nunca se toma del cuerpo (RF-ID-04). El registro **siempre** crea `CLIENTE`.
 
 Respuesta `201`:
 
 ```json
 {
-  "id": "6f1c2b4e-0a3d-4c5e-9b7a-8d9e0f1a2b3c",
+  "id": 1,
   "email": "lucia@pizzeria.co",
-  "fullName": "Lucia Perez",
+  "firstName": "Lucia",
+  "lastName": "Perez",
   "phone": "+573001234567",
-  "role": "CUSTOMER",
+  "role": "CLIENTE",
   "createdAt": "2026-10-18T15:00:00Z"
 }
 ```
@@ -280,12 +303,59 @@ ni su hash**: son dos formas de filtrar el mismo secreto.
 
 | Situación | Respuesta |
 |---|---|
-| Falta `email`, `fullName`, o la contraseña no llega a 10 caracteres | `400` `REQUEST_VALIDATION_FAILED`, con la lista de campos |
-| El cuerpo trae un campo que no existe (un `role`, una errata) | `400` `MALFORMED_REQUEST`, diciendo el nombre del campo |
+| Falta `email`, `firstName`, `lastName`, o la contraseña no llega a 10 caracteres | `400` `REQUEST_VALIDATION_FAILED`, con la lista de campos |
+| El cuerpo trae un campo que no existe (un `role`, una errata) | `400` `MALFORMED_REQUEST` |
 | El email ya está registrado | `409` `IDENTITY_EMAIL_ALREADY_REGISTERED` |
 
 > **El 409 permite enumerar correos.** Está aceptado en el MVP y anotado como deuda en `backlog.md`: la
 > alternativa —responder «registrado» siempre— deja al usuario sin saber por qué falla su alta.
+
+#### `POST /api/v1/auth/login`
+
+Intercambia credenciales por un token. **Pública**.
+
+Cuerpo:
+
+| Campo | Tipo | Obligatorio | Regla |
+|---|---|---|---|
+| `email` | texto | sí | Formato de email válido |
+| `password` | texto | sí | No puede ir vacía |
+
+Respuesta `200`:
+
+```json
+{
+  "token": "jwt-de-ejemplo",
+  "userId": 1,
+  "email": "lucia@pizzeria.co",
+  "role": "CLIENTE"
+}
+```
+
+| Situación | Respuesta |
+|---|---|
+| Credenciales correctas | `200` con el token |
+| Email o contraseña incorrectos, o el usuario no existe | `401` `IDENTITY_INVALID_CREDENTIALS`. **No se distingue** cuál de los dos falló |
+| Falta `email` o `password` | `400` `REQUEST_VALIDATION_FAILED` |
+
+#### `POST /api/v1/auth/logout`
+
+Revoca el token recibido en `Authorization`. **Pública**: no exige un token válido para responder.
+
+| Situación | Respuesta |
+|---|---|
+| Token válido y no revocado | `204` y el token deja de servir |
+| Token ilegible o ya revocado | `204`: el resultado es el mismo y repetir la llamada no falla |
+
+#### `GET /api/v1/customers/me`
+
+Perfil del cliente autenticado, con el mismo cuerpo que la respuesta del registro. El `id` sale del
+token, nunca de la petición.
+
+| Situación | Respuesta |
+|---|---|
+| Token válido | `200` con `id`, `email`, `firstName`, `lastName`, `phone`, `role` y `createdAt` |
+| Sin token o token inválido | `401` |
 
 ### 4.4 Direcciones del cliente
 
@@ -359,8 +429,9 @@ que para él son lo mismo.
 
 | Ausente | Llega con |
 |---|---|
-| `imageUrl` en la respuesta | US-052. Se publica una URL prefirmada generada por el servidor, nunca una clave de almacenamiento |
-| Alta, edición y baja de pizzas | US-011, US-012, US-013 |
+| `imageUrl` con una URL real | US-052. Se publica una URL prefirmada generada por el servidor, nunca una clave de almacenamiento. Hoy el campo existe y sale `null` |
+| Alta, edición y baja de productos | US-011 y US-013 |
+| Administración de categorías | Pendiente de historia: hoy sólo se leen las activas |
 | Cualquier campo de precio en la entrada | Nunca: el cliente no manda precios (RN-IM-01) |
 
 ### 4.2 No existe ningún `DELETE` en el catálogo

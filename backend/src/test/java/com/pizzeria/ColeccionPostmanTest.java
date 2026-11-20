@@ -155,7 +155,7 @@ class ColeccionPostmanTest {
 
     /**
      * Una ruta del contrato con {@code {parametro}} en un segmento casa con cualquier valor de ese
-     * segmento en la colección, que es donde va una variable como {@code {{pizzaIdMargarita}}}.
+     * segmento en la colección, que es donde va una variable como {@code {{productId}}}.
      */
     private static boolean coincide(String rutaContrato, String rutaPeticion) {
         String[] contractuales = rutaContrato.split("/");
