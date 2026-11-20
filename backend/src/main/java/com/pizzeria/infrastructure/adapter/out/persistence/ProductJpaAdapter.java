@@ -1,11 +1,14 @@
 package com.pizzeria.infrastructure.adapter.out.persistence;
 
+import com.pizzeria.domain.model.PageRequest;
+import com.pizzeria.domain.model.PageResult;
 import com.pizzeria.domain.model.Product;
 import com.pizzeria.domain.port.out.ProductRepositoryPort;
 import com.pizzeria.infrastructure.adapter.out.persistence.entity.ProductEntity;
 import com.pizzeria.infrastructure.adapter.out.persistence.repository.ProductJpaRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -20,9 +23,19 @@ public class ProductJpaAdapter implements ProductRepositoryPort {
     }
 
     @Override
-    public Page<Product> findAll(Long categoryId, boolean onlyAvailable, Pageable pageable) {
-        return jpaRepository.findAllByFilters(categoryId, onlyAvailable, pageable)
-            .map(this::toDomain);
+    public PageResult<Product> findAll(Long categoryId, boolean onlyAvailable, PageRequest pageRequest) {
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(
+            pageRequest.page(),
+            pageRequest.size(),
+            Sort.by("name").ascending()
+        );
+        Page<ProductEntity> result = jpaRepository.findAllByFilters(categoryId, onlyAvailable, pageable);
+        return new PageResult<>(
+            result.getContent().stream().map(this::toDomain).toList(),
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements()
+        );
     }
 
     @Override
