@@ -325,7 +325,7 @@ Respuesta `200`:
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "token": "jwt-de-ejemplo",
   "userId": 1,
   "email": "lucia@pizzeria.co",
   "role": "CLIENTE"

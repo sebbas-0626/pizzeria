@@ -40,8 +40,15 @@ no lo elimina: hay que autorizarlo.
 La comparación es contra la LÍNEA COMPLETA y con el texto literal completo, no contra
 "JWT_SECRET=" a secas. Así la excepción no tapa un `JWT_SECRET=` real que se commitee mañana,
 ni en este archivo ni en ningún otro.
+
+Segundo caso: `docs/architecture/api-contract.md` documenta la respuesta de `POST /api/v1/auth/login`
+con un token de ejemplo. Hasta el commit 78f1e4b ese ejemplo era un JWT inventado
+("eyJhbGciOiJIUzI1NiJ9..."), que `generic-api-key` marca por su entropía. No autentica nada: nunca
+se emitió con la clave real. El ejemplo ya se sustituyó por "jwt-de-ejemplo"; el hallazgo del
+historial se autoriza por la línea literal exacta, no por la ruta ni por el commit.
 '''
 regexTarget = "line"
 regexes = [
   '''-e JWT_SECRET=cambia-esto-por-un-secreto-de-32-caracteres''',
+  '''  "token": "eyJhbGciOiJIUzI1NiJ9\.\.\.",''',
 ]
